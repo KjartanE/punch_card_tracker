@@ -4,7 +4,7 @@ import { SectionList, StyleSheet, View } from "react-native"
 import {
   Chip,
   Divider,
-  List,
+  FAB,
   Menu,
   Text,
   TouchableRipple,
@@ -15,6 +15,7 @@ import { TimeEntryEditDialog } from "@/components/TimeEntryEditDialog"
 import {
   computeEarnings,
   deleteTimeEntry,
+  insertTimeEntry,
   updateTimeEntry,
   type TimeEntryView,
 } from "@/domain/timeEntries"
@@ -34,6 +35,11 @@ interface DaySection {
   totalCents: number | null
 }
 
+type DialogState =
+  | { open: false }
+  | { open: true; mode: "create" }
+  | { open: true; mode: "edit"; editing: TimeEntryView }
+
 export default function HistoryScreen() {
   const db = useSQLiteContext()
   const theme = useTheme()
@@ -42,7 +48,7 @@ export default function HistoryScreen() {
 
   const [clientFilter, setClientFilter] = useState<string | null>(null)
   const [clientMenuOpen, setClientMenuOpen] = useState(false)
-  const [editing, setEditing] = useState<TimeEntryView | null>(null)
+  const [dialog, setDialog] = useState<DialogState>({ open: false })
 
   const entries = useTimeEntries({
     clientId: clientFilter ?? undefined,
@@ -155,42 +161,81 @@ export default function HistoryScreen() {
               drivingCents: settings.defaultDrivingRateCents,
             }}
             currency={currency}
-            onPress={() => setEditing(item)}
+            onPress={() =>
+              setDialog({ open: true, mode: "edit", editing: item })
+            }
           />
         )}
         ItemSeparatorComponent={Divider}
         stickySectionHeadersEnabled
-        contentContainerStyle={{ paddingBottom: 64 }}
+        contentContainerStyle={{ paddingBottom: 96 }}
         ListEmptyComponent={
           entries !== null ? (
             <View style={{ padding: 32 }}>
               <Text style={{ textAlign: "center", opacity: 0.6 }}>
-                No completed entries yet. Punch in from the Now tab.
+                No completed entries yet. Punch in from the Now tab, or tap + to
+                add one manually.
               </Text>
             </View>
           ) : null
         }
       />
-      {editing ? (
+      <FAB
+        icon="plus"
+        label="Add entry"
+        style={{ position: "absolute", right: 16, bottom: 16 }}
+        onPress={() => setDialog({ open: true, mode: "create" })}
+      />
+      {dialog.open ? (
         <TimeEntryEditDialog
           visible
-          initialValues={{
-            type: editing.type,
-            startedAt: editing.startedAt,
-            endedAt: editing.endedAt,
-            notes: editing.notes,
-          }}
-          onDismiss={() => setEditing(null)}
+          mode={dialog.mode}
+          initialValues={
+            dialog.mode === "edit"
+              ? {
+                  clientId: dialog.editing.clientId,
+                  jobId: dialog.editing.jobId,
+                  type: dialog.editing.type,
+                  startedAt: dialog.editing.startedAt,
+                  endedAt: dialog.editing.endedAt,
+                  notes: dialog.editing.notes,
+                }
+              : {
+                  clientId: null,
+                  jobId: null,
+                  type: "onsite",
+                  startedAt: Date.now() - 60 * 60 * 1000,
+                  endedAt: Date.now(),
+                  notes: null,
+                }
+          }
+          onDismiss={() => setDialog({ open: false })}
           onSave={async (values) => {
-            await updateTimeEntry(db, editing.id, values)
+            if (dialog.mode === "edit") {
+              await updateTimeEntry(db, dialog.editing.id, values)
+            } else {
+              if (values.endedAt === null) return
+              await insertTimeEntry(db, {
+                clientId: values.clientId,
+                jobId: values.jobId,
+                type: values.type,
+                startedAt: values.startedAt,
+                endedAt: values.endedAt,
+                notes: values.notes,
+              })
+            }
             bump("timeEntries")
-            setEditing(null)
+            setDialog({ open: false })
           }}
-          onDelete={async () => {
-            await deleteTimeEntry(db, editing.id)
-            bump("timeEntries")
-            setEditing(null)
-          }}
+          onDelete={
+            dialog.mode === "edit"
+              ? async () => {
+                  await deleteTimeEntry(db, dialog.editing.id)
+                  bump("timeEntries")
+                  setDialog({ open: false })
+                }
+              : undefined
+          }
         />
       ) : null}
     </View>
@@ -204,18 +249,38 @@ interface EntryRowProps {
   onPress: () => void
 }
 
+function typeMeta(type: TimeEntryView["type"]): {
+  label: string
+  icon: string
+} {
+  if (type === "driving") return { label: "Driving", icon: "car" }
+  if (type === "office")
+    return { label: "Office", icon: "office-building-outline" }
+  return { label: "Onsite", icon: "hammer-wrench" }
+}
+
 function EntryRow({ entry, defaults, currency, onPress }: EntryRowProps) {
   const earnings = computeEarnings(entry, defaults)
-  const typeLabel = entry.type === "driving" ? "Driving" : "Onsite"
-  const typeIcon = entry.type === "driving" ? "car" : "hammer-wrench"
+  const meta = typeMeta(entry.type)
+  const primary = entry.jobName ?? entry.clientName ?? meta.label
+  const secondary =
+    entry.jobName && entry.clientName
+      ? entry.clientName
+      : entry.jobName
+        ? null
+        : entry.clientName
+          ? meta.label
+          : "Unassigned"
   return (
     <TouchableRipple onPress={onPress}>
       <View style={styles.entryRow}>
         <View style={{ flex: 1 }}>
-          <Text variant="titleSmall">{entry.jobName}</Text>
-          <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-            {entry.clientName}
-          </Text>
+          <Text variant="titleSmall">{primary}</Text>
+          {secondary ? (
+            <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+              {secondary}
+            </Text>
+          ) : null}
           {entry.notes ? (
             <Text variant="bodySmall" style={{ opacity: 0.6, marginTop: 2 }}>
               {entry.notes}
@@ -231,8 +296,8 @@ function EntryRow({ entry, defaults, currency, onPress }: EntryRowProps) {
               ? formatCents(earnings.earningsCents, currency)
               : "No rate"}
           </Text>
-          <Chip icon={typeIcon} compact style={{ marginTop: 2 }}>
-            {typeLabel}
+          <Chip icon={meta.icon} compact style={{ marginTop: 2 }}>
+            {meta.label}
           </Chip>
         </View>
       </View>

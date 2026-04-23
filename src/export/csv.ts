@@ -63,8 +63,8 @@ export function buildTimeEntriesCsv(
     )
     return [
       isoDate(e.startedAt),
-      e.clientName,
-      e.jobName,
+      e.clientName ?? "",
+      e.jobName ?? "",
       e.type,
       isoDateTime(e.startedAt),
       e.endedAt !== null ? isoDateTime(e.endedAt) : "",

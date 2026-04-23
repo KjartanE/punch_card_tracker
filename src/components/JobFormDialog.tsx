@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { View } from "react-native"
+import type { TextInput as RNTextInput } from "react-native"
 import { Button, Dialog, Portal, TextInput } from "react-native-paper"
 
-import { formatCentsPlain, parseCents } from "@/utils/money"
+import { KeyboardedDialog } from "@/components/KeyboardedDialog"
 
 export interface JobFormValues {
   name: string
-  onsiteRateCents: number | null
-  drivingRateCents: number | null
+  location: string | null
   notes: string | null
 }
 
@@ -16,13 +16,10 @@ interface Props {
   title?: string
   initialValues?: {
     name?: string
-    onsiteRateCents?: number | null
-    drivingRateCents?: number | null
+    location?: string | null
     notes?: string | null
   }
-  defaultOnsiteRateCents: number | null
-  defaultDrivingRateCents: number | null
-  currency: string
+  homeLocationPlaceholder?: string | null
   extraActions?: React.ReactNode
   onDismiss: () => void
   onSubmit: (values: JobFormValues) => Promise<void> | void
@@ -32,56 +29,42 @@ export function JobFormDialog({
   visible,
   title = "New job",
   initialValues,
-  defaultOnsiteRateCents,
-  defaultDrivingRateCents,
-  currency,
+  homeLocationPlaceholder,
   extraActions,
   onDismiss,
   onSubmit,
 }: Props) {
   const [name, setName] = useState("")
-  const [onsite, setOnsite] = useState("")
-  const [driving, setDriving] = useState("")
+  const [location, setLocation] = useState("")
   const [notes, setNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
+
+  const locationRef = useRef<RNTextInput>(null)
+  const notesRef = useRef<RNTextInput>(null)
 
   useEffect(() => {
     if (visible) {
       setName(initialValues?.name ?? "")
-      setOnsite(formatCentsPlain(initialValues?.onsiteRateCents ?? null))
-      setDriving(formatCentsPlain(initialValues?.drivingRateCents ?? null))
+      setLocation(initialValues?.location ?? "")
       setNotes(initialValues?.notes ?? "")
       setSubmitting(false)
     }
   }, [
     visible,
     initialValues?.name,
-    initialValues?.onsiteRateCents,
-    initialValues?.drivingRateCents,
+    initialValues?.location,
     initialValues?.notes,
   ])
 
   const canSubmit = name.trim().length > 0 && !submitting
 
-  const rateOrNull = (value: string): number | null => {
-    const trimmed = value.trim()
-    if (trimmed === "") return null
-    return parseCents(trimmed)
-  }
-
   const handleSubmit = async () => {
     if (!canSubmit) return
-    const onsiteCents = rateOrNull(onsite)
-    const drivingCents = rateOrNull(driving)
-    if (onsite.trim() !== "" && onsiteCents === null) return
-    if (driving.trim() !== "" && drivingCents === null) return
-
     setSubmitting(true)
     try {
       await onSubmit({
         name: name.trim(),
-        onsiteRateCents: onsiteCents,
-        drivingRateCents: drivingCents,
+        location: location.trim() || null,
         notes: notes.trim() || null,
       })
     } finally {
@@ -89,14 +72,13 @@ export function JobFormDialog({
     }
   }
 
-  const onsitePlaceholder =
-    formatCentsPlain(defaultOnsiteRateCents) || "default"
-  const drivingPlaceholder =
-    formatCentsPlain(defaultDrivingRateCents) || "default"
+  const locationPlaceholder = homeLocationPlaceholder
+    ? `Default: ${homeLocationPlaceholder}`
+    : "Optional"
 
   return (
     <Portal>
-      <Dialog visible={visible} onDismiss={onDismiss}>
+      <KeyboardedDialog visible={visible} onDismiss={onDismiss}>
         <Dialog.Title>{title}</Dialog.Title>
         <Dialog.Content>
           <View style={{ gap: 12 }}>
@@ -107,32 +89,30 @@ export function JobFormDialog({
               onChangeText={setName}
               autoFocus
               placeholder="e.g. Main office rewire"
+              returnKeyType="next"
+              onSubmitEditing={() => locationRef.current?.focus()}
             />
             <TextInput
-              label="Onsite rate"
+              ref={locationRef}
+              label="Location"
               mode="outlined"
-              keyboardType="decimal-pad"
-              value={onsite}
-              onChangeText={setOnsite}
-              placeholder={onsitePlaceholder}
-              right={<TextInput.Affix text={`${currency}/hr`} />}
+              value={location}
+              onChangeText={setLocation}
+              placeholder={locationPlaceholder}
+              returnKeyType="next"
+              onSubmitEditing={() => notesRef.current?.focus()}
             />
             <TextInput
-              label="Driving rate"
-              mode="outlined"
-              keyboardType="decimal-pad"
-              value={driving}
-              onChangeText={setDriving}
-              placeholder={drivingPlaceholder}
-              right={<TextInput.Affix text={`${currency}/hr`} />}
-            />
-            <TextInput
+              ref={notesRef}
               label="Notes (optional)"
               mode="outlined"
               value={notes}
               onChangeText={setNotes}
               multiline
               numberOfLines={2}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              blurOnSubmit
             />
           </View>
         </Dialog.Content>
@@ -145,7 +125,7 @@ export function JobFormDialog({
             Save
           </Button>
         </Dialog.Actions>
-      </Dialog>
+      </KeyboardedDialog>
     </Portal>
   )
 }

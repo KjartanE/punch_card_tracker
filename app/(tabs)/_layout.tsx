@@ -46,7 +46,6 @@ export default function TabsLayout() {
         name="clients"
         options={{
           title: "Clients",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
               name="account-group-outline"

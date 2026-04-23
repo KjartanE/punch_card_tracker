@@ -1,8 +1,20 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ScrollView, View } from "react-native"
-import { Button, Chip, Dialog, Portal, TextInput } from "react-native-paper"
+import type { TextInput as RNTextInput } from "react-native"
+import {
+  Button,
+  Dialog,
+  Divider,
+  Menu,
+  Portal,
+  Text,
+  TextInput,
+  useTheme,
+} from "react-native-paper"
 
+import { DateTimeField } from "@/components/DateTimeField"
 import { FieldRow } from "@/components/FieldRow"
+import { KeyboardedDialog } from "@/components/KeyboardedDialog"
 import { PickerDialog } from "@/components/PickerDialog"
 import {
   EXPENSE_CATEGORIES,
@@ -11,7 +23,6 @@ import {
 } from "@/domain/expenses"
 import { useJobs } from "@/hooks/useJobs"
 import type { Client, ExpenseCategory } from "@/types"
-import { formatDate, pickDate } from "@/utils/datetime"
 import { formatCentsPlain, parseCents } from "@/utils/money"
 
 export interface ExpenseFormValues {
@@ -44,6 +55,7 @@ export function ExpenseFormDialog({
   onSubmit,
   onDelete,
 }: Props) {
+  const theme = useTheme()
   const [category, setCategory] = useState<ExpenseCategory>("other")
   const [amount, setAmount] = useState("")
   const [occurredAt, setOccurredAt] = useState<number>(Date.now())
@@ -51,8 +63,12 @@ export function ExpenseFormDialog({
   const [jobId, setJobId] = useState<string | null>(null)
   const [description, setDescription] = useState("")
   const [busy, setBusy] = useState(false)
+  const [categoryMenu, setCategoryMenu] = useState(false)
   const [clientPicker, setClientPicker] = useState(false)
   const [jobPicker, setJobPicker] = useState(false)
+
+  const amountRef = useRef<RNTextInput>(null)
+  const descriptionRef = useRef<RNTextInput>(null)
 
   const jobs = useJobs({ clientId: clientId ?? undefined })
 
@@ -81,11 +97,6 @@ export function ExpenseFormDialog({
 
   const selectedClient = clients.find((c) => c.id === clientId)
   const selectedJob = (jobs ?? []).find((j) => j.id === jobId)
-
-  const handlePickDate = async () => {
-    const picked = await pickDate(occurredAt)
-    if (picked !== null) setOccurredAt(picked)
-  }
 
   const handleSubmit = async () => {
     if (!canSubmit || cents === null) return
@@ -116,7 +127,7 @@ export function ExpenseFormDialog({
 
   return (
     <Portal>
-      <Dialog visible={visible} onDismiss={onDismiss}>
+      <KeyboardedDialog visible={visible} onDismiss={onDismiss}>
         <Dialog.Title>
           {title ?? (onDelete ? "Edit expense" : "New expense")}
         </Dialog.Title>
@@ -129,24 +140,47 @@ export function ExpenseFormDialog({
             }}
             keyboardShouldPersistTaps="handled"
           >
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View
-                style={{ flexDirection: "row", gap: 8, paddingVertical: 2 }}
+            <View>
+              <Text
+                variant="labelMedium"
+                style={{
+                  color: theme.colors.onSurfaceVariant,
+                  marginBottom: 6,
+                }}
+              >
+                Category
+              </Text>
+              <Menu
+                visible={categoryMenu}
+                onDismiss={() => setCategoryMenu(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    icon={EXPENSE_CATEGORY_ICONS[category]}
+                    onPress={() => setCategoryMenu(true)}
+                    contentStyle={{ justifyContent: "flex-start" }}
+                    style={{ alignSelf: "stretch" }}
+                  >
+                    {EXPENSE_CATEGORY_LABELS[category]}
+                  </Button>
+                }
               >
                 {EXPENSE_CATEGORIES.map((cat) => (
-                  <Chip
+                  <Menu.Item
                     key={cat}
-                    icon={EXPENSE_CATEGORY_ICONS[cat]}
-                    selected={category === cat}
-                    showSelectedCheck={false}
-                    onPress={() => setCategory(cat)}
-                  >
-                    {EXPENSE_CATEGORY_LABELS[cat]}
-                  </Chip>
+                    leadingIcon={EXPENSE_CATEGORY_ICONS[cat]}
+                    trailingIcon={category === cat ? "check" : undefined}
+                    title={EXPENSE_CATEGORY_LABELS[cat]}
+                    onPress={() => {
+                      setCategory(cat)
+                      setCategoryMenu(false)
+                    }}
+                  />
                 ))}
-              </View>
-            </ScrollView>
+              </Menu>
+            </View>
             <TextInput
+              ref={amountRef}
               label="Amount"
               mode="outlined"
               keyboardType="decimal-pad"
@@ -154,10 +188,16 @@ export function ExpenseFormDialog({
               onChangeText={setAmount}
               placeholder="0.00"
               right={<TextInput.Affix text={currency} />}
+              returnKeyType="next"
+              onSubmitEditing={() => descriptionRef.current?.focus()}
             />
-            <Button mode="outlined" icon="calendar" onPress={handlePickDate}>
-              {formatDate(occurredAt)}
-            </Button>
+            <DateTimeField
+              label="Occurred"
+              value={occurredAt}
+              onChange={(v) => {
+                if (v !== null) setOccurredAt(v)
+              }}
+            />
             <FieldRow
               label="Client (optional)"
               value={selectedClient?.name ?? ""}
@@ -172,12 +212,16 @@ export function ExpenseFormDialog({
               disabled={!clientId}
             />
             <TextInput
+              ref={descriptionRef}
               label="Description (optional)"
               mode="outlined"
               value={description}
               onChangeText={setDescription}
               multiline
               numberOfLines={2}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              blurOnSubmit
             />
           </ScrollView>
         </Dialog.ScrollArea>
@@ -195,7 +239,7 @@ export function ExpenseFormDialog({
             Save
           </Button>
         </Dialog.Actions>
-      </Dialog>
+      </KeyboardedDialog>
       <PickerDialog
         visible={clientPicker}
         title="Select client"

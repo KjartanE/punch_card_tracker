@@ -27,12 +27,22 @@ import { useExpenses } from "@/hooks/useExpenses"
 import { useSettings } from "@/hooks/useSettings"
 import { bump } from "@/stores/invalidation"
 import type { ExpenseCategory } from "@/types"
-import { formatDate, formatMonthHeader, startOfMonth } from "@/utils/datetime"
+import {
+  formatDate,
+  formatDayHeader,
+  formatMonthHeader,
+  startOfDay,
+  startOfMonth,
+} from "@/utils/datetime"
 import { formatCents } from "@/utils/money"
 
-interface MonthSection {
+interface DaySection {
   title: string
+  dayMs: number
   monthMs: number
+  monthLabel: string
+  showMonthBanner: boolean
+  monthTotalCents: number
   data: ExpenseView[]
   totalCents: number
 }
@@ -44,7 +54,11 @@ export default function ExpensesScreen() {
   const clients = useClients({ includeArchived: true })
 
   const [clientFilter, setClientFilter] = useState<string | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | null>(
+    null,
+  )
   const [clientMenu, setClientMenu] = useState(false)
+  const [categoryMenu, setCategoryMenu] = useState(false)
   const [dialog, setDialog] = useState<{
     open: boolean
     editing?: ExpenseView
@@ -54,28 +68,50 @@ export default function ExpensesScreen() {
 
   const expenses = useExpenses({
     clientId: clientFilter ?? undefined,
+    category: categoryFilter ?? undefined,
     limit: 500,
   })
 
-  const sections = useMemo<MonthSection[]>(() => {
+  const sections = useMemo<DaySection[]>(() => {
     if (!expenses) return []
-    const byMonth = new Map<number, MonthSection>()
+    // Group by day, track month totals, flag the first day of each month.
+    const byDay = new Map<number, DaySection>()
+    const monthTotals = new Map<number, number>()
     for (const expense of expenses) {
+      const dayMs = startOfDay(expense.occurredAt)
       const monthMs = startOfMonth(expense.occurredAt)
-      let section = byMonth.get(monthMs)
+      let section = byDay.get(dayMs)
       if (!section) {
         section = {
-          title: formatMonthHeader(monthMs),
+          title: formatDayHeader(dayMs),
+          dayMs,
           monthMs,
+          monthLabel: formatMonthHeader(monthMs),
+          showMonthBanner: false,
+          monthTotalCents: 0,
           data: [],
           totalCents: 0,
         }
-        byMonth.set(monthMs, section)
+        byDay.set(dayMs, section)
       }
       section.data.push(expense)
       section.totalCents += expense.amountCents
+      monthTotals.set(
+        monthMs,
+        (monthTotals.get(monthMs) ?? 0) + expense.amountCents,
+      )
     }
-    return Array.from(byMonth.values()).sort((a, b) => b.monthMs - a.monthMs)
+    const sorted = Array.from(byDay.values()).sort((a, b) => b.dayMs - a.dayMs)
+    // Mark the first day-section of each month so the header renders a month banner.
+    let lastMonth: number | null = null
+    for (const s of sorted) {
+      s.monthTotalCents = monthTotals.get(s.monthMs) ?? 0
+      if (s.monthMs !== lastMonth) {
+        s.showMonthBanner = true
+        lastMonth = s.monthMs
+      }
+    }
+    return sorted
   }, [expenses])
 
   const thisMonthSummary = useMemo(() => {
@@ -103,6 +139,12 @@ export default function ExpensesScreen() {
   const activeClient = clientFilter
     ? clients.find((c) => c.id === clientFilter)
     : null
+  const selectedId = dialog.editing?.id ?? null
+
+  const clearAll = () => {
+    setClientFilter(null)
+    setCategoryFilter(null)
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -112,7 +154,7 @@ export default function ExpensesScreen() {
           onDismiss={() => setClientMenu(false)}
           anchor={
             <Chip
-              icon="filter-variant"
+              icon="account-outline"
               onPress={() => setClientMenu(true)}
               mode={clientFilter ? "flat" : "outlined"}
               selected={!!clientFilter}
@@ -140,6 +182,52 @@ export default function ExpensesScreen() {
             />
           ))}
         </Menu>
+        <Menu
+          visible={categoryMenu}
+          onDismiss={() => setCategoryMenu(false)}
+          anchor={
+            <Chip
+              icon={
+                categoryFilter
+                  ? EXPENSE_CATEGORY_ICONS[categoryFilter]
+                  : "tag-multiple-outline"
+              }
+              onPress={() => setCategoryMenu(true)}
+              mode={categoryFilter ? "flat" : "outlined"}
+              selected={!!categoryFilter}
+            >
+              {categoryFilter
+                ? EXPENSE_CATEGORY_LABELS[categoryFilter]
+                : "All categories"}
+            </Chip>
+          }
+        >
+          <Menu.Item
+            title="All categories"
+            onPress={() => {
+              setCategoryFilter(null)
+              setCategoryMenu(false)
+            }}
+          />
+          <Divider />
+          {EXPENSE_CATEGORIES.map((cat) => (
+            <Menu.Item
+              key={cat}
+              leadingIcon={EXPENSE_CATEGORY_ICONS[cat]}
+              trailingIcon={categoryFilter === cat ? "check" : undefined}
+              title={EXPENSE_CATEGORY_LABELS[cat]}
+              onPress={() => {
+                setCategoryFilter(cat)
+                setCategoryMenu(false)
+              }}
+            />
+          ))}
+        </Menu>
+        {clientFilter || categoryFilter ? (
+          <Chip icon="close" onPress={clearAll} mode="outlined">
+            Clear
+          </Chip>
+        ) : null}
       </View>
       <Divider />
       <SectionList
@@ -177,24 +265,48 @@ export default function ExpensesScreen() {
           ) : null
         }
         renderSectionHeader={({ section }) => (
-          <View
-            style={[
-              styles.sectionHeader,
-              { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-          >
-            <Text variant="labelLarge" style={{ flex: 1 }}>
-              {section.title}
-            </Text>
-            <Text variant="labelMedium" style={{ opacity: 0.75 }}>
-              {formatCents(section.totalCents, currency)}
-            </Text>
+          <View>
+            {section.showMonthBanner ? (
+              <View
+                style={[
+                  styles.monthBanner,
+                  { backgroundColor: theme.colors.primaryContainer },
+                ]}
+              >
+                <Text
+                  variant="titleSmall"
+                  style={{ flex: 1, color: theme.colors.onPrimaryContainer }}
+                >
+                  {section.monthLabel}
+                </Text>
+                <Text
+                  variant="labelMedium"
+                  style={{ color: theme.colors.onPrimaryContainer }}
+                >
+                  {formatCents(section.monthTotalCents, currency)}
+                </Text>
+              </View>
+            ) : null}
+            <View
+              style={[
+                styles.dayHeader,
+                { backgroundColor: theme.colors.surfaceVariant },
+              ]}
+            >
+              <Text variant="labelLarge" style={{ flex: 1 }}>
+                {section.title}
+              </Text>
+              <Text variant="labelMedium" style={{ opacity: 0.75 }}>
+                {formatCents(section.totalCents, currency)}
+              </Text>
+            </View>
           </View>
         )}
         renderItem={({ item }) => (
           <ExpenseRow
             expense={item}
             currency={currency}
+            selected={item.id === selectedId}
             onPress={() => setDialog({ open: true, editing: item })}
           />
         )}
@@ -259,19 +371,31 @@ export default function ExpensesScreen() {
 interface ExpenseRowProps {
   expense: ExpenseView
   currency: string
+  selected: boolean
   onPress: () => void
 }
 
-function ExpenseRow({ expense, currency, onPress }: ExpenseRowProps) {
+function ExpenseRow({ expense, currency, selected, onPress }: ExpenseRowProps) {
+  const theme = useTheme()
   const label = EXPENSE_CATEGORY_LABELS[expense.category]
   const attribution = [expense.clientName, expense.jobName]
     .filter(Boolean)
     .join(" · ")
   return (
     <TouchableRipple onPress={onPress}>
-      <View style={styles.expenseRow}>
+      <View
+        style={[
+          styles.expenseRow,
+          selected && {
+            backgroundColor: theme.colors.secondaryContainer,
+          },
+        ]}
+      >
         <View style={{ flex: 1 }}>
-          <Text variant="titleSmall">
+          <Text
+            variant="titleSmall"
+            style={selected ? { fontWeight: "700" } : undefined}
+          >
             {expense.description ? expense.description : label}
           </Text>
           <Text variant="bodySmall" style={{ opacity: 0.7 }}>
@@ -301,6 +425,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
+    flexWrap: "wrap",
   },
   summary: {
     margin: 16,
@@ -313,7 +438,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 12,
   },
-  sectionHeader: {
+  monthBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  dayHeader: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,

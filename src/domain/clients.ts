@@ -7,6 +7,9 @@ interface ClientRow {
   id: string
   name: string
   notes: string | null
+  phone: string | null
+  email: string | null
+  home_location: string | null
   created_at: number
   archived_at: number | null
 }
@@ -15,6 +18,9 @@ const toClient = (r: ClientRow): Client => ({
   id: r.id,
   name: r.name,
   notes: r.notes,
+  phone: r.phone,
+  email: r.email,
+  homeLocation: r.home_location,
   createdAt: r.created_at,
   archivedAt: r.archived_at,
 })
@@ -44,7 +50,13 @@ export async function getClient(
 export interface ClientInput {
   name: string
   notes?: string | null
+  phone?: string | null
+  email?: string | null
+  homeLocation?: string | null
 }
+
+const cleanOrNull = (v: string | null | undefined): string | null =>
+  v?.trim() ? v.trim() : null
 
 export async function createClient(
   db: SQLiteDatabase,
@@ -53,15 +65,23 @@ export async function createClient(
   const client: Client = {
     id: newId(),
     name: input.name.trim(),
-    notes: input.notes?.trim() || null,
+    notes: cleanOrNull(input.notes),
+    phone: cleanOrNull(input.phone),
+    email: cleanOrNull(input.email),
+    homeLocation: cleanOrNull(input.homeLocation),
     createdAt: Date.now(),
     archivedAt: null,
   }
   await db.runAsync(
-    "INSERT INTO clients (id, name, notes, created_at) VALUES (?, ?, ?, ?)",
+    `INSERT INTO clients
+     (id, name, notes, phone, email, home_location, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     client.id,
     client.name,
     client.notes,
+    client.phone,
+    client.email,
+    client.homeLocation,
     client.createdAt,
   )
   return client
@@ -80,7 +100,19 @@ export async function updateClient(
   }
   if (patch.notes !== undefined) {
     sets.push("notes = ?")
-    values.push(patch.notes?.trim() || null)
+    values.push(cleanOrNull(patch.notes))
+  }
+  if (patch.phone !== undefined) {
+    sets.push("phone = ?")
+    values.push(cleanOrNull(patch.phone))
+  }
+  if (patch.email !== undefined) {
+    sets.push("email = ?")
+    values.push(cleanOrNull(patch.email))
+  }
+  if (patch.homeLocation !== undefined) {
+    sets.push("home_location = ?")
+    values.push(cleanOrNull(patch.homeLocation))
   }
   if (sets.length === 0) return
   await db.runAsync(

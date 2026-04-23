@@ -55,4 +55,35 @@ export const migrations: readonly string[] = [
   );
   INSERT INTO settings (id, currency) VALUES (1, 'USD');
   `,
+
+  `
+  ALTER TABLE clients ADD COLUMN phone TEXT;
+  ALTER TABLE clients ADD COLUMN email TEXT;
+  ALTER TABLE clients ADD COLUMN home_location TEXT;
+  `,
+
+  `
+  ALTER TABLE jobs ADD COLUMN location TEXT;
+  `,
+
+  `
+  CREATE TABLE time_entries_new (
+    id TEXT PRIMARY KEY,
+    client_id TEXT REFERENCES clients(id) ON DELETE SET NULL,
+    job_id TEXT REFERENCES jobs(id) ON DELETE SET NULL,
+    type TEXT NOT NULL CHECK (type IN ('onsite','driving','office')),
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    notes TEXT,
+    created_at INTEGER NOT NULL
+  );
+  INSERT INTO time_entries_new (id, client_id, job_id, type, started_at, ended_at, notes, created_at)
+    SELECT te.id, j.client_id, te.job_id, te.type, te.started_at, te.ended_at, te.notes, te.created_at
+    FROM time_entries te JOIN jobs j ON j.id = te.job_id;
+  DROP TABLE time_entries;
+  ALTER TABLE time_entries_new RENAME TO time_entries;
+  CREATE INDEX idx_time_entries_client_id ON time_entries(client_id);
+  CREATE INDEX idx_time_entries_job_id ON time_entries(job_id);
+  CREATE INDEX idx_time_entries_started_at ON time_entries(started_at);
+  `,
 ] as const

@@ -120,7 +120,7 @@ export default function SettingsScreen() {
       <List.Section title="Data">
         <List.Item
           title="Google Sheets"
-          description="Coming in Phase 5"
+          description="Coming soon: Sync time entries and expenses with Google Sheets"
           disabled
           left={(props) => <List.Icon {...props} icon="google" />}
         />
