@@ -45,10 +45,14 @@ export interface Expense {
   createdAt: number
 }
 
+export type ThemeMode = "system" | "light" | "dark"
+
 export interface Settings {
   defaultOnsiteRateCents: number | null
   defaultDrivingRateCents: number | null
   currency: string
+  themeMode: ThemeMode
+  accentColor: string
   googleRefreshToken: string | null
   googleSheetId: string | null
 }

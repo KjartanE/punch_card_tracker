@@ -9,13 +9,11 @@ import { PaperProvider } from "react-native-paper"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
 import { DB_NAME, migrate } from "@/db"
+import { useSettings } from "@/hooks/useSettings"
 import { hydrateActivities } from "@/stores/activities"
-import { darkTheme, lightTheme } from "@/theme"
+import { buildTheme, DEFAULT_ACCENT_ID } from "@/theme"
 
 export default function RootLayout() {
-  const scheme = useColorScheme()
-  const theme = scheme === "dark" ? darkTheme : lightTheme
-
   useEffect(() => {
     void hydrateActivities()
   }, [])
@@ -25,20 +23,35 @@ export default function RootLayout() {
       <KeyboardProvider>
         <SafeAreaProvider>
           <SQLiteProvider databaseName={DB_NAME} onInit={migrate}>
-            <PaperProvider theme={theme}>
-              <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: theme.colors.background },
-                }}
-              >
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-            </PaperProvider>
+            <ThemedRoot />
           </SQLiteProvider>
         </SafeAreaProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>
+  )
+}
+
+function ThemedRoot() {
+  const systemScheme = useColorScheme()
+  const settings = useSettings()
+
+  const mode = settings?.themeMode ?? "system"
+  const effective =
+    mode === "system" ? (systemScheme === "dark" ? "dark" : "light") : mode
+  const accent = settings?.accentColor ?? DEFAULT_ACCENT_ID
+  const theme = buildTheme(accent, effective)
+
+  return (
+    <PaperProvider theme={theme}>
+      <StatusBar style={effective === "dark" ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </PaperProvider>
   )
 }

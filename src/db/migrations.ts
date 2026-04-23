@@ -86,4 +86,12 @@ export const migrations: readonly string[] = [
   CREATE INDEX idx_time_entries_job_id ON time_entries(job_id);
   CREATE INDEX idx_time_entries_started_at ON time_entries(started_at);
   `,
+
+  `
+  ALTER TABLE settings ADD COLUMN theme_mode TEXT NOT NULL DEFAULT 'system';
+  `,
+
+  `
+  ALTER TABLE settings ADD COLUMN accent_color TEXT NOT NULL DEFAULT 'teal';
+  `,
 ] as const

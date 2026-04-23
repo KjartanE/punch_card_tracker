@@ -1,22 +1,39 @@
 import { useSQLiteContext } from "expo-sqlite"
 import { useEffect, useState } from "react"
-import { ScrollView, StyleSheet, View } from "react-native"
-import { Divider, List, Menu, TextInput } from "react-native-paper"
+import { Pressable, ScrollView, StyleSheet, View } from "react-native"
+import {
+  Divider,
+  List,
+  Menu,
+  Text,
+  TextInput,
+  useTheme,
+} from "react-native-paper"
 
 import { ExportDialog } from "@/components/ExportDialog"
 import { updateSettings } from "@/domain/settings"
 import { useSettings } from "@/hooks/useSettings"
 import { bump } from "@/stores/invalidation"
+import { ACCENT_PALETTES } from "@/theme"
+import type { ThemeMode } from "@/types"
 import { SUPPORTED_CURRENCIES } from "@/utils/currencies"
 import { formatCentsPlain, parseCents } from "@/utils/money"
 
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
+  { value: "system", label: "System", icon: "theme-light-dark" },
+  { value: "light", label: "Light", icon: "white-balance-sunny" },
+  { value: "dark", label: "Dark", icon: "weather-night" },
+]
+
 export default function SettingsScreen() {
   const db = useSQLiteContext()
+  const theme = useTheme()
   const settings = useSettings()
 
   const [onsite, setOnsite] = useState("")
   const [driving, setDriving] = useState("")
   const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
@@ -52,6 +69,23 @@ export default function SettingsScreen() {
     await updateSettings(db, { currency: code })
     bump("settings")
   }
+
+  const saveTheme = async (mode: ThemeMode) => {
+    setThemeMenuOpen(false)
+    if (mode === settings.themeMode) return
+    await updateSettings(db, { themeMode: mode })
+    bump("settings")
+  }
+
+  const saveAccent = async (id: string) => {
+    if (id === settings.accentColor) return
+    await updateSettings(db, { accentColor: id })
+    bump("settings")
+  }
+
+  const currentTheme =
+    THEME_OPTIONS.find((o) => o.value === settings.themeMode) ??
+    THEME_OPTIONS[0]
 
   return (
     <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -91,6 +125,85 @@ export default function SettingsScreen() {
             placeholder="0.00"
             right={<TextInput.Affix text={`${settings.currency}/hr`} />}
           />
+        </View>
+      </List.Section>
+
+      <Divider />
+
+      <List.Section title="Appearance">
+        <Menu
+          visible={themeMenuOpen}
+          onDismiss={() => setThemeMenuOpen(false)}
+          anchor={
+            <List.Item
+              title={currentTheme.label}
+              description="Theme"
+              left={(props) => (
+                <List.Icon {...props} icon={currentTheme.icon} />
+              )}
+              right={(props) => <List.Icon {...props} icon="chevron-down" />}
+              onPress={() => setThemeMenuOpen(true)}
+            />
+          }
+        >
+          {THEME_OPTIONS.map((opt) => (
+            <Menu.Item
+              key={opt.value}
+              leadingIcon={opt.icon}
+              trailingIcon={
+                settings.themeMode === opt.value ? "check" : undefined
+              }
+              title={opt.label}
+              onPress={() => void saveTheme(opt.value)}
+            />
+          ))}
+        </Menu>
+        <View style={styles.accentRow}>
+          <Text
+            variant="labelMedium"
+            style={{
+              color: theme.colors.onSurfaceVariant,
+              marginBottom: 8,
+            }}
+          >
+            ACCENT COLOR
+          </Text>
+          <View style={styles.swatchRow}>
+            {ACCENT_PALETTES.map((p) => {
+              const selected = p.id === settings.accentColor
+              return (
+                <Pressable
+                  key={p.id}
+                  onPress={() => void saveAccent(p.id)}
+                  style={({ pressed }) => [
+                    styles.swatchWrap,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.swatch,
+                      {
+                        backgroundColor: p.swatch,
+                        borderColor: selected
+                          ? theme.colors.onSurface
+                          : "transparent",
+                      },
+                    ]}
+                  />
+                  <Text
+                    variant="labelSmall"
+                    style={{
+                      marginTop: 4,
+                      fontWeight: selected ? "700" : "400",
+                    }}
+                  >
+                    {p.label}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </View>
         </View>
       </List.Section>
 
@@ -141,4 +254,20 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   field: { paddingHorizontal: 16, paddingVertical: 8 },
+  accentRow: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
+  swatchRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  swatchWrap: {
+    alignItems: "center",
+    width: 64,
+  },
+  swatch: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+  },
 })
