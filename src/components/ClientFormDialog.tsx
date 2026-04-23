@@ -1,50 +1,50 @@
-import { useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { Button, Dialog, Portal, TextInput } from 'react-native-paper';
+import { useEffect, useState } from "react"
+import { View } from "react-native"
+import { Button, Dialog, Portal, TextInput } from "react-native-paper"
 
 export interface ClientFormValues {
-  name: string;
-  notes: string | null;
+  name: string
+  notes: string | null
 }
 
 interface Props {
-  visible: boolean;
-  title?: string;
-  initialValues?: { name?: string; notes?: string | null };
-  onDismiss: () => void;
-  onSubmit: (values: ClientFormValues) => Promise<void> | void;
+  visible: boolean
+  title?: string
+  initialValues?: { name?: string; notes?: string | null }
+  onDismiss: () => void
+  onSubmit: (values: ClientFormValues) => Promise<void> | void
 }
 
 export function ClientFormDialog({
   visible,
-  title = 'New client',
+  title = "New client",
   initialValues,
   onDismiss,
   onSubmit,
 }: Props) {
-  const [name, setName] = useState('');
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [name, setName] = useState("")
+  const [notes, setNotes] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (visible) {
-      setName(initialValues?.name ?? '');
-      setNotes(initialValues?.notes ?? '');
-      setSubmitting(false);
+      setName(initialValues?.name ?? "")
+      setNotes(initialValues?.notes ?? "")
+      setSubmitting(false)
     }
-  }, [visible, initialValues?.name, initialValues?.notes]);
+  }, [visible, initialValues?.name, initialValues?.notes])
 
-  const canSubmit = name.trim().length > 0 && !submitting;
+  const canSubmit = name.trim().length > 0 && !submitting
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
+    if (!canSubmit) return
+    setSubmitting(true)
     try {
-      await onSubmit({ name: name.trim(), notes: notes.trim() || null });
+      await onSubmit({ name: name.trim(), notes: notes.trim() || null })
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   return (
     <Portal>
@@ -79,5 +79,5 @@ export function ClientFormDialog({
         </Dialog.Actions>
       </Dialog>
     </Portal>
-  );
+  )
 }

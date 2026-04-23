@@ -1,6 +1,6 @@
-import { useSQLiteContext } from 'expo-sqlite';
-import { useMemo, useState } from 'react';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { useSQLiteContext } from "expo-sqlite"
+import { useMemo, useState } from "react"
+import { SectionList, StyleSheet, View } from "react-native"
 import {
   Chip,
   Divider,
@@ -10,9 +10,9 @@ import {
   Text,
   TouchableRipple,
   useTheme,
-} from 'react-native-paper';
+} from "react-native-paper"
 
-import { ExpenseFormDialog } from '@/components/ExpenseFormDialog';
+import { ExpenseFormDialog } from "@/components/ExpenseFormDialog"
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_ICONS,
@@ -21,87 +21,88 @@ import {
   deleteExpense,
   updateExpense,
   type ExpenseView,
-} from '@/domain/expenses';
-import { useClients } from '@/hooks/useClients';
-import { useExpenses } from '@/hooks/useExpenses';
-import { useSettings } from '@/hooks/useSettings';
-import { bump } from '@/stores/invalidation';
-import type { ExpenseCategory } from '@/types';
-import {
-  formatDate,
-  formatMonthHeader,
-  startOfMonth,
-} from '@/utils/datetime';
-import { formatCents } from '@/utils/money';
+} from "@/domain/expenses"
+import { useClients } from "@/hooks/useClients"
+import { useExpenses } from "@/hooks/useExpenses"
+import { useSettings } from "@/hooks/useSettings"
+import { bump } from "@/stores/invalidation"
+import type { ExpenseCategory } from "@/types"
+import { formatDate, formatMonthHeader, startOfMonth } from "@/utils/datetime"
+import { formatCents } from "@/utils/money"
 
 interface MonthSection {
-  title: string;
-  monthMs: number;
-  data: ExpenseView[];
-  totalCents: number;
+  title: string
+  monthMs: number
+  data: ExpenseView[]
+  totalCents: number
 }
 
 export default function ExpensesScreen() {
-  const db = useSQLiteContext();
-  const theme = useTheme();
-  const settings = useSettings();
-  const clients = useClients({ includeArchived: true });
+  const db = useSQLiteContext()
+  const theme = useTheme()
+  const settings = useSettings()
+  const clients = useClients({ includeArchived: true })
 
-  const [clientFilter, setClientFilter] = useState<string | null>(null);
-  const [clientMenu, setClientMenu] = useState(false);
-  const [dialog, setDialog] = useState<{ open: boolean; editing?: ExpenseView }>({
+  const [clientFilter, setClientFilter] = useState<string | null>(null)
+  const [clientMenu, setClientMenu] = useState(false)
+  const [dialog, setDialog] = useState<{
+    open: boolean
+    editing?: ExpenseView
+  }>({
     open: false,
-  });
+  })
 
   const expenses = useExpenses({
     clientId: clientFilter ?? undefined,
     limit: 500,
-  });
+  })
 
   const sections = useMemo<MonthSection[]>(() => {
-    if (!expenses) return [];
-    const byMonth = new Map<number, MonthSection>();
+    if (!expenses) return []
+    const byMonth = new Map<number, MonthSection>()
     for (const expense of expenses) {
-      const monthMs = startOfMonth(expense.occurredAt);
-      let section = byMonth.get(monthMs);
+      const monthMs = startOfMonth(expense.occurredAt)
+      let section = byMonth.get(monthMs)
       if (!section) {
         section = {
           title: formatMonthHeader(monthMs),
           monthMs,
           data: [],
           totalCents: 0,
-        };
-        byMonth.set(monthMs, section);
+        }
+        byMonth.set(monthMs, section)
       }
-      section.data.push(expense);
-      section.totalCents += expense.amountCents;
+      section.data.push(expense)
+      section.totalCents += expense.amountCents
     }
-    return Array.from(byMonth.values()).sort((a, b) => b.monthMs - a.monthMs);
-  }, [expenses]);
+    return Array.from(byMonth.values()).sort((a, b) => b.monthMs - a.monthMs)
+  }, [expenses])
 
   const thisMonthSummary = useMemo(() => {
-    if (!expenses) return null;
-    const from = startOfMonth(Date.now());
+    if (!expenses) return null
+    const from = startOfMonth(Date.now())
     const perCategory: Record<ExpenseCategory, number> = {
       bill: 0,
       gas: 0,
       tools: 0,
       repair: 0,
       other: 0,
-    };
-    let total = 0;
-    for (const e of expenses) {
-      if (e.occurredAt < from) continue;
-      perCategory[e.category] += e.amountCents;
-      total += e.amountCents;
     }
-    return { total, perCategory };
-  }, [expenses]);
+    let total = 0
+    for (const e of expenses) {
+      if (e.occurredAt < from) continue
+      perCategory[e.category] += e.amountCents
+      total += e.amountCents
+    }
+    return { total, perCategory }
+  }, [expenses])
 
-  if (!settings || clients === null || expenses === null) return null;
+  if (!settings || clients === null || expenses === null) return null
 
-  const currency = settings.currency;
-  const activeClient = clientFilter ? clients.find((c) => c.id === clientFilter) : null;
+  const currency = settings.currency
+  const activeClient = clientFilter
+    ? clients.find((c) => c.id === clientFilter)
+    : null
 
   return (
     <View style={{ flex: 1 }}>
@@ -113,18 +114,18 @@ export default function ExpensesScreen() {
             <Chip
               icon="filter-variant"
               onPress={() => setClientMenu(true)}
-              mode={clientFilter ? 'flat' : 'outlined'}
+              mode={clientFilter ? "flat" : "outlined"}
               selected={!!clientFilter}
             >
-              {activeClient?.name ?? 'All clients'}
+              {activeClient?.name ?? "All clients"}
             </Chip>
           }
         >
           <Menu.Item
             title="All clients"
             onPress={() => {
-              setClientFilter(null);
-              setClientMenu(false);
+              setClientFilter(null)
+              setClientMenu(false)
             }}
           />
           <Divider />
@@ -133,8 +134,8 @@ export default function ExpensesScreen() {
               key={c.id}
               title={c.name}
               onPress={() => {
-                setClientFilter(c.id);
-                setClientMenu(false);
+                setClientFilter(c.id)
+                setClientMenu(false)
               }}
             />
           ))}
@@ -164,8 +165,12 @@ export default function ExpensesScreen() {
                     )}`}
                   </Chip>
                 ))}
-                {Object.values(thisMonthSummary.perCategory).every((v) => v === 0) ? (
-                  <Text style={{ opacity: 0.6 }}>No expenses this month yet.</Text>
+                {Object.values(thisMonthSummary.perCategory).every(
+                  (v) => v === 0,
+                ) ? (
+                  <Text style={{ opacity: 0.6 }}>
+                    No expenses this month yet.
+                  </Text>
                 ) : null}
               </View>
             </Surface>
@@ -199,7 +204,7 @@ export default function ExpensesScreen() {
         ListEmptyComponent={
           expenses.length === 0 ? (
             <View style={{ padding: 32 }}>
-              <Text style={{ textAlign: 'center', opacity: 0.6 }}>
+              <Text style={{ textAlign: "center", opacity: 0.6 }}>
                 No expenses yet. Tap + to add one.
               </Text>
             </View>
@@ -208,7 +213,7 @@ export default function ExpensesScreen() {
       />
       <FAB
         icon="plus"
-        style={{ position: 'absolute', right: 16, bottom: 16 }}
+        style={{ position: "absolute", right: 16, bottom: 16 }}
         onPress={() => setDialog({ open: true })}
       />
       <ExpenseFormDialog
@@ -230,36 +235,38 @@ export default function ExpensesScreen() {
         onDismiss={() => setDialog({ open: false })}
         onSubmit={async (values) => {
           if (dialog.editing) {
-            await updateExpense(db, dialog.editing.id, values);
+            await updateExpense(db, dialog.editing.id, values)
           } else {
-            await createExpense(db, values);
+            await createExpense(db, values)
           }
-          bump('expenses');
-          setDialog({ open: false });
+          bump("expenses")
+          setDialog({ open: false })
         }}
         onDelete={
           dialog.editing
             ? async () => {
-                await deleteExpense(db, dialog.editing!.id);
-                bump('expenses');
-                setDialog({ open: false });
+                await deleteExpense(db, dialog.editing!.id)
+                bump("expenses")
+                setDialog({ open: false })
               }
             : undefined
         }
       />
     </View>
-  );
+  )
 }
 
 interface ExpenseRowProps {
-  expense: ExpenseView;
-  currency: string;
-  onPress: () => void;
+  expense: ExpenseView
+  currency: string
+  onPress: () => void
 }
 
 function ExpenseRow({ expense, currency, onPress }: ExpenseRowProps) {
-  const label = EXPENSE_CATEGORY_LABELS[expense.category];
-  const attribution = [expense.clientName, expense.jobName].filter(Boolean).join(' · ');
+  const label = EXPENSE_CATEGORY_LABELS[expense.category]
+  const attribution = [expense.clientName, expense.jobName]
+    .filter(Boolean)
+    .join(" · ")
   return (
     <TouchableRipple onPress={onPress}>
       <View style={styles.expenseRow}>
@@ -269,26 +276,28 @@ function ExpenseRow({ expense, currency, onPress }: ExpenseRowProps) {
           </Text>
           <Text variant="bodySmall" style={{ opacity: 0.7 }}>
             {formatDate(expense.occurredAt)}
-            {attribution ? `  ·  ${attribution}` : ''}
+            {attribution ? `  ·  ${attribution}` : ""}
           </Text>
-          <View style={{ flexDirection: 'row', marginTop: 4 }}>
+          <View style={{ flexDirection: "row", marginTop: 4 }}>
             <Chip icon={EXPENSE_CATEGORY_ICONS[expense.category]} compact>
               {label}
             </Chip>
           </View>
         </View>
-        <View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
-          <Text variant="titleMedium">{formatCents(expense.amountCents, currency)}</Text>
+        <View style={{ alignItems: "flex-end", justifyContent: "center" }}>
+          <Text variant="titleMedium">
+            {formatCents(expense.amountCents, currency)}
+          </Text>
         </View>
       </View>
     </TouchableRipple>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   filterBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
@@ -299,21 +308,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   summaryChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginTop: 12,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   expenseRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     gap: 12,
   },
-});
+})

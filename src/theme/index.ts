@@ -1,21 +1,55 @@
-import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from "react-native-paper"
 
 export const lightTheme: MD3Theme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#00675b',
-    secondary: '#4a635f',
-    tertiary: '#416277',
+    primary: "#00675b",
+    onPrimary: "#ffffff",
+    primaryContainer: "#76f8e2",
+    onPrimaryContainer: "#00201c",
+    secondary: "#4a635f",
+    onSecondary: "#ffffff",
+    secondaryContainer: "#cce8e2",
+    onSecondaryContainer: "#06201c",
+    tertiary: "#416277",
+    onTertiary: "#ffffff",
+    tertiaryContainer: "#c5e7ff",
+    onTertiaryContainer: "#001e2d",
+    background: "#fafdfb",
+    onBackground: "#171d1c",
+    surface: "#fafdfb",
+    onSurface: "#171d1c",
+    surfaceVariant: "#dae5e1",
+    onSurfaceVariant: "#3f4946",
+    outline: "#6f7976",
+    outlineVariant: "#bec9c5",
   },
-};
+}
 
 export const darkTheme: MD3Theme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: '#6cdac9',
-    secondary: '#b1cdc5',
-    tertiary: '#a9cbe3',
+    primary: "#6cdac9",
+    onPrimary: "#003832",
+    primaryContainer: "#005048",
+    onPrimaryContainer: "#88f7e5",
+    secondary: "#b1cdc5",
+    onSecondary: "#1d3530",
+    secondaryContainer: "#334b46",
+    onSecondaryContainer: "#cce8e1",
+    tertiary: "#a9cbe3",
+    onTertiary: "#0e3447",
+    tertiaryContainer: "#284b5f",
+    onTertiaryContainer: "#c5e7ff",
+    background: "#0e1513",
+    onBackground: "#dee4e1",
+    surface: "#0e1513",
+    onSurface: "#dee4e1",
+    surfaceVariant: "#3f4946",
+    onSurfaceVariant: "#bec9c5",
+    outline: "#89938f",
+    outlineVariant: "#3f4946",
   },
-};
+}

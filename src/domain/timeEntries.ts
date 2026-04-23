@@ -1,36 +1,36 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteDatabase } from "expo-sqlite"
 
-import type { TimeEntryType } from '@/types';
-import { newId } from '@/utils/ids';
+import type { TimeEntryType } from "@/types"
+import { newId } from "@/utils/ids"
 
 export interface TimeEntryView {
-  id: string;
-  jobId: string;
-  type: TimeEntryType;
-  startedAt: number;
-  endedAt: number | null;
-  notes: string | null;
-  createdAt: number;
-  jobName: string;
-  jobOnsiteRateCents: number | null;
-  jobDrivingRateCents: number | null;
-  clientId: string;
-  clientName: string;
+  id: string
+  jobId: string
+  type: TimeEntryType
+  startedAt: number
+  endedAt: number | null
+  notes: string | null
+  createdAt: number
+  jobName: string
+  jobOnsiteRateCents: number | null
+  jobDrivingRateCents: number | null
+  clientId: string
+  clientName: string
 }
 
 interface TimeEntryRow {
-  id: string;
-  job_id: string;
-  type: TimeEntryType;
-  started_at: number;
-  ended_at: number | null;
-  notes: string | null;
-  created_at: number;
-  job_name: string;
-  job_onsite_rate_cents: number | null;
-  job_driving_rate_cents: number | null;
-  client_id: string;
-  client_name: string;
+  id: string
+  job_id: string
+  type: TimeEntryType
+  started_at: number
+  ended_at: number | null
+  notes: string | null
+  created_at: number
+  job_name: string
+  job_onsite_rate_cents: number | null
+  job_driving_rate_cents: number | null
+  client_id: string
+  client_name: string
 }
 
 const SELECT_VIEW = `
@@ -44,7 +44,7 @@ const SELECT_VIEW = `
   FROM time_entries te
   INNER JOIN jobs j ON j.id = te.job_id
   INNER JOIN clients c ON c.id = j.client_id
-`;
+`
 
 const toView = (r: TimeEntryRow): TimeEntryView => ({
   id: r.id,
@@ -59,71 +59,76 @@ const toView = (r: TimeEntryRow): TimeEntryView => ({
   jobDrivingRateCents: r.job_driving_rate_cents,
   clientId: r.client_id,
   clientName: r.client_name,
-});
+})
 
 export interface ListTimeEntriesOpts {
-  jobId?: string;
-  clientId?: string;
-  startedAtFrom?: number;
-  startedAtTo?: number;
-  includeOpen?: boolean;
-  limit?: number;
+  jobId?: string
+  clientId?: string
+  startedAtFrom?: number
+  startedAtTo?: number
+  includeOpen?: boolean
+  limit?: number
 }
 
 export async function listTimeEntries(
   db: SQLiteDatabase,
   opts: ListTimeEntriesOpts = {},
 ): Promise<TimeEntryView[]> {
-  const where: string[] = [];
-  const values: (string | number)[] = [];
+  const where: string[] = []
+  const values: (string | number)[] = []
   if (opts.jobId) {
-    where.push('te.job_id = ?');
-    values.push(opts.jobId);
+    where.push("te.job_id = ?")
+    values.push(opts.jobId)
   }
   if (opts.clientId) {
-    where.push('c.id = ?');
-    values.push(opts.clientId);
+    where.push("c.id = ?")
+    values.push(opts.clientId)
   }
   if (opts.startedAtFrom !== undefined) {
-    where.push('te.started_at >= ?');
-    values.push(opts.startedAtFrom);
+    where.push("te.started_at >= ?")
+    values.push(opts.startedAtFrom)
   }
   if (opts.startedAtTo !== undefined) {
-    where.push('te.started_at < ?');
-    values.push(opts.startedAtTo);
+    where.push("te.started_at < ?")
+    values.push(opts.startedAtTo)
   }
   if (!opts.includeOpen) {
-    where.push('te.ended_at IS NOT NULL');
+    where.push("te.ended_at IS NOT NULL")
   }
-  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  const limitSql = opts.limit ? `LIMIT ${Math.floor(opts.limit)}` : '';
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : ""
+  const limitSql = opts.limit ? `LIMIT ${Math.floor(opts.limit)}` : ""
   const rows = await db.getAllAsync<TimeEntryRow>(
     `${SELECT_VIEW} ${whereSql} ORDER BY te.started_at DESC ${limitSql}`,
     ...values,
-  );
-  return rows.map(toView);
+  )
+  return rows.map(toView)
 }
 
-export async function getTimeEntry(db: SQLiteDatabase, id: string): Promise<TimeEntryView | null> {
+export async function getTimeEntry(
+  db: SQLiteDatabase,
+  id: string,
+): Promise<TimeEntryView | null> {
   const row = await db.getFirstAsync<TimeEntryRow>(
     `${SELECT_VIEW} WHERE te.id = ?`,
     id,
-  );
-  return row ? toView(row) : null;
+  )
+  return row ? toView(row) : null
 }
 
-export async function getOpenEntry(db: SQLiteDatabase): Promise<TimeEntryView | null> {
+export async function getOpenEntry(
+  db: SQLiteDatabase,
+): Promise<TimeEntryView | null> {
   const row = await db.getFirstAsync<TimeEntryRow>(
     `${SELECT_VIEW} WHERE te.ended_at IS NULL ORDER BY te.started_at DESC LIMIT 1`,
-  );
-  return row ? toView(row) : null;
+  )
+  return row ? toView(row) : null
 }
 
 export interface StartEntryInput {
-  jobId: string;
-  type: TimeEntryType;
-  startedAt?: number;
-  notes?: string | null;
+  jobId: string
+  type: TimeEntryType
+  startedAt?: number
+  notes?: string | null
 }
 
 /**
@@ -134,13 +139,13 @@ export async function startEntry(
   db: SQLiteDatabase,
   input: StartEntryInput,
 ): Promise<string> {
-  const startedAt = input.startedAt ?? Date.now();
-  const id = newId();
+  const startedAt = input.startedAt ?? Date.now()
+  const id = newId()
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      'UPDATE time_entries SET ended_at = ? WHERE ended_at IS NULL',
+      "UPDATE time_entries SET ended_at = ? WHERE ended_at IS NULL",
       startedAt,
-    );
+    )
     await db.runAsync(
       `INSERT INTO time_entries
        (id, job_id, type, started_at, ended_at, notes, created_at)
@@ -151,9 +156,9 @@ export async function startEntry(
       startedAt,
       input.notes?.trim() || null,
       Date.now(),
-    );
-  });
-  return id;
+    )
+  })
+  return id
 }
 
 export async function endEntry(
@@ -162,17 +167,17 @@ export async function endEntry(
   endedAt: number = Date.now(),
 ): Promise<void> {
   await db.runAsync(
-    'UPDATE time_entries SET ended_at = ? WHERE id = ? AND ended_at IS NULL',
+    "UPDATE time_entries SET ended_at = ? WHERE id = ? AND ended_at IS NULL",
     endedAt,
     id,
-  );
+  )
 }
 
 export interface TimeEntryPatch {
-  type?: TimeEntryType;
-  startedAt?: number;
-  endedAt?: number | null;
-  notes?: string | null;
+  type?: TimeEntryType
+  startedAt?: number
+  endedAt?: number | null
+  notes?: string | null
 }
 
 export async function updateTimeEntry(
@@ -180,40 +185,43 @@ export async function updateTimeEntry(
   id: string,
   patch: TimeEntryPatch,
 ): Promise<void> {
-  const sets: string[] = [];
-  const values: (string | number | null)[] = [];
+  const sets: string[] = []
+  const values: (string | number | null)[] = []
   if (patch.type !== undefined) {
-    sets.push('type = ?');
-    values.push(patch.type);
+    sets.push("type = ?")
+    values.push(patch.type)
   }
   if (patch.startedAt !== undefined) {
-    sets.push('started_at = ?');
-    values.push(patch.startedAt);
+    sets.push("started_at = ?")
+    values.push(patch.startedAt)
   }
   if (patch.endedAt !== undefined) {
-    sets.push('ended_at = ?');
-    values.push(patch.endedAt);
+    sets.push("ended_at = ?")
+    values.push(patch.endedAt)
   }
   if (patch.notes !== undefined) {
-    sets.push('notes = ?');
-    values.push(patch.notes?.trim() || null);
+    sets.push("notes = ?")
+    values.push(patch.notes?.trim() || null)
   }
-  if (sets.length === 0) return;
+  if (sets.length === 0) return
   await db.runAsync(
-    `UPDATE time_entries SET ${sets.join(', ')} WHERE id = ?`,
+    `UPDATE time_entries SET ${sets.join(", ")} WHERE id = ?`,
     ...values,
     id,
-  );
+  )
 }
 
-export async function deleteTimeEntry(db: SQLiteDatabase, id: string): Promise<void> {
-  await db.runAsync('DELETE FROM time_entries WHERE id = ?', id);
+export async function deleteTimeEntry(
+  db: SQLiteDatabase,
+  id: string,
+): Promise<void> {
+  await db.runAsync("DELETE FROM time_entries WHERE id = ?", id)
 }
 
 export interface Earnings {
-  durationMs: number;
-  effectiveRateCents: number | null;
-  earningsCents: number | null;
+  durationMs: number
+  effectiveRateCents: number | null
+  earningsCents: number | null
 }
 
 export function computeEarnings(
@@ -221,17 +229,18 @@ export function computeEarnings(
   defaults: { onsiteCents: number | null; drivingCents: number | null },
   now: number = Date.now(),
 ): Earnings {
-  const end = entry.endedAt ?? now;
-  const durationMs = Math.max(0, end - entry.startedAt);
+  const end = entry.endedAt ?? now
+  const durationMs = Math.max(0, end - entry.startedAt)
   const rate =
-    entry.type === 'onsite'
-      ? entry.jobOnsiteRateCents ?? defaults.onsiteCents
-      : entry.jobDrivingRateCents ?? defaults.drivingCents;
-  if (rate == null) return { durationMs, effectiveRateCents: null, earningsCents: null };
-  const hours = durationMs / 3_600_000;
+    entry.type === "onsite"
+      ? (entry.jobOnsiteRateCents ?? defaults.onsiteCents)
+      : (entry.jobDrivingRateCents ?? defaults.drivingCents)
+  if (rate == null)
+    return { durationMs, effectiveRateCents: null, earningsCents: null }
+  const hours = durationMs / 3_600_000
   return {
     durationMs,
     effectiveRateCents: rate,
     earningsCents: Math.round(hours * rate),
-  };
+  }
 }

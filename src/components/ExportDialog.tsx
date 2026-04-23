@@ -1,93 +1,93 @@
-import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useSQLiteContext } from "expo-sqlite"
+import { useState } from "react"
+import { View } from "react-native"
 import {
   Button,
   Dialog,
   Portal,
   SegmentedButtons,
   Text,
-} from 'react-native-paper';
+} from "react-native-paper"
 
-import { listExpenses } from '@/domain/expenses';
-import { listTimeEntries } from '@/domain/timeEntries';
-import { buildExpensesCsv, buildTimeEntriesCsv } from '@/export/csv';
-import { shareCsv } from '@/export/share';
-import { useSettings } from '@/hooks/useSettings';
-import { startOfMonth } from '@/utils/datetime';
+import { listExpenses } from "@/domain/expenses"
+import { listTimeEntries } from "@/domain/timeEntries"
+import { buildExpensesCsv, buildTimeEntriesCsv } from "@/export/csv"
+import { shareCsv } from "@/export/share"
+import { useSettings } from "@/hooks/useSettings"
+import { startOfMonth } from "@/utils/datetime"
 
-type DataKind = 'timeEntries' | 'expenses';
-type Range = 'thisMonth' | 'thisYear' | 'all';
+type DataKind = "timeEntries" | "expenses"
+type Range = "thisMonth" | "thisYear" | "all"
 
 interface Props {
-  visible: boolean;
-  onDismiss: () => void;
+  visible: boolean
+  onDismiss: () => void
 }
 
 interface RangeBounds {
-  from?: number;
-  label: string;
+  from?: number
+  label: string
 }
 
 function computeRange(range: Range): RangeBounds {
-  const now = Date.now();
-  if (range === 'all') return { label: 'all' };
-  if (range === 'thisMonth') {
-    const from = startOfMonth(now);
-    const d = new Date(from);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return { from, label: `${d.getFullYear()}-${pad(d.getMonth() + 1)}` };
+  const now = Date.now()
+  if (range === "all") return { label: "all" }
+  if (range === "thisMonth") {
+    const from = startOfMonth(now)
+    const d = new Date(from)
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    return { from, label: `${d.getFullYear()}-${pad(d.getMonth() + 1)}` }
   }
-  const d = new Date(now);
-  d.setMonth(0, 1);
-  d.setHours(0, 0, 0, 0);
-  return { from: d.getTime(), label: `${d.getFullYear()}` };
+  const d = new Date(now)
+  d.setMonth(0, 1)
+  d.setHours(0, 0, 0, 0)
+  return { from: d.getTime(), label: `${d.getFullYear()}` }
 }
 
 export function ExportDialog({ visible, onDismiss }: Props) {
-  const db = useSQLiteContext();
-  const settings = useSettings();
-  const [kind, setKind] = useState<DataKind>('timeEntries');
-  const [range, setRange] = useState<Range>('thisMonth');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const db = useSQLiteContext()
+  const settings = useSettings()
+  const [kind, setKind] = useState<DataKind>("timeEntries")
+  const [range, setRange] = useState<Range>("thisMonth")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleExport = async () => {
-    if (!settings || busy) return;
-    setBusy(true);
-    setError(null);
+    if (!settings || busy) return
+    setBusy(true)
+    setError(null)
     try {
-      const bounds = computeRange(range);
-      let csv: string;
-      let filename: string;
-      if (kind === 'timeEntries') {
+      const bounds = computeRange(range)
+      let csv: string
+      let filename: string
+      if (kind === "timeEntries") {
         const entries = await listTimeEntries(db, {
           startedAtFrom: bounds.from,
           includeOpen: false,
           limit: 10000,
-        });
-        csv = buildTimeEntriesCsv(entries, settings);
-        filename = `punch-time-entries-${bounds.label}.csv`;
+        })
+        csv = buildTimeEntriesCsv(entries, settings)
+        filename = `punch-time-entries-${bounds.label}.csv`
       } else {
         const expenses = await listExpenses(db, {
           occurredAtFrom: bounds.from,
           limit: 10000,
-        });
-        csv = buildExpensesCsv(expenses, settings);
-        filename = `punch-expenses-${bounds.label}.csv`;
+        })
+        csv = buildExpensesCsv(expenses, settings)
+        filename = `punch-expenses-${bounds.label}.csv`
       }
-      const shared = await shareCsv(filename, csv);
+      const shared = await shareCsv(filename, csv)
       if (!shared) {
-        setError('Sharing is not available on this device.');
+        setError("Sharing is not available on this device.")
       } else {
-        onDismiss();
+        onDismiss()
       }
     } catch (e) {
-      setError((e as Error).message ?? 'Export failed.');
+      setError((e as Error).message ?? "Export failed.")
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <Portal>
@@ -101,8 +101,8 @@ export function ExportDialog({ visible, onDismiss }: Props) {
                 value={kind}
                 onValueChange={(v) => setKind(v as DataKind)}
                 buttons={[
-                  { value: 'timeEntries', label: 'Time entries' },
-                  { value: 'expenses', label: 'Expenses' },
+                  { value: "timeEntries", label: "Time entries" },
+                  { value: "expenses", label: "Expenses" },
                 ]}
               />
             </View>
@@ -112,15 +112,13 @@ export function ExportDialog({ visible, onDismiss }: Props) {
                 value={range}
                 onValueChange={(v) => setRange(v as Range)}
                 buttons={[
-                  { value: 'thisMonth', label: 'Month' },
-                  { value: 'thisYear', label: 'Year' },
-                  { value: 'all', label: 'All' },
+                  { value: "thisMonth", label: "Month" },
+                  { value: "thisYear", label: "Year" },
+                  { value: "all", label: "All" },
                 ]}
               />
             </View>
-            {error ? (
-              <Text style={{ color: 'red' }}>{error}</Text>
-            ) : null}
+            {error ? <Text style={{ color: "red" }}>{error}</Text> : null}
           </View>
         </Dialog.Content>
         <Dialog.Actions>
@@ -139,5 +137,5 @@ export function ExportDialog({ visible, onDismiss }: Props) {
         </Dialog.Actions>
       </Dialog>
     </Portal>
-  );
+  )
 }

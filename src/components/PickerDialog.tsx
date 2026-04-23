@@ -1,20 +1,20 @@
-import { ScrollView, View } from 'react-native';
-import { Button, Dialog, List, Portal, Text } from 'react-native-paper';
+import { ScrollView, View } from "react-native"
+import { Button, Dialog, List, Portal, Text } from "react-native-paper"
 
 interface Option {
-  id: string;
-  title: string;
-  description?: string;
+  id: string
+  title: string
+  description?: string
 }
 
 interface Props {
-  visible: boolean;
-  title: string;
-  options: Option[];
-  selectedId?: string | null;
-  emptyHint?: string;
-  onSelect: (id: string) => void;
-  onDismiss: () => void;
+  visible: boolean
+  title: string
+  options: Option[]
+  selectedId?: string | null
+  emptyHint?: string
+  onSelect: (id: string) => void
+  onDismiss: () => void
 }
 
 export function PickerDialog({
@@ -22,7 +22,7 @@ export function PickerDialog({
   title,
   options,
   selectedId,
-  emptyHint = 'No options available.',
+  emptyHint = "No options available.",
   onSelect,
   onDismiss,
 }: Props) {
@@ -33,7 +33,9 @@ export function PickerDialog({
         <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
           {options.length === 0 ? (
             <View style={{ padding: 24 }}>
-              <Text style={{ opacity: 0.6, textAlign: 'center' }}>{emptyHint}</Text>
+              <Text style={{ opacity: 0.6, textAlign: "center" }}>
+                {emptyHint}
+              </Text>
             </View>
           ) : (
             <ScrollView style={{ maxHeight: 360 }}>
@@ -58,5 +60,5 @@ export function PickerDialog({
         </Dialog.Actions>
       </Dialog>
     </Portal>
-  );
+  )
 }

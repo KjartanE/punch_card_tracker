@@ -1,7 +1,7 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Stack, useLocalSearchParams } from "expo-router"
+import { useSQLiteContext } from "expo-sqlite"
+import { useState } from "react"
+import { ScrollView, View } from "react-native"
 import {
   Button,
   Divider,
@@ -10,59 +10,50 @@ import {
   List,
   Menu,
   Text,
-} from 'react-native-paper';
+} from "react-native-paper"
 
-import { ClientFormDialog } from '@/components/ClientFormDialog';
-import { JobFormDialog } from '@/components/JobFormDialog';
-import {
-  archiveClient,
-  unarchiveClient,
-  updateClient,
-} from '@/domain/clients';
-import {
-  archiveJob,
-  createJob,
-  unarchiveJob,
-  updateJob,
-} from '@/domain/jobs';
-import { useClient } from '@/hooks/useClients';
-import { useJobs } from '@/hooks/useJobs';
-import { useSettings } from '@/hooks/useSettings';
-import { bump } from '@/stores/invalidation';
-import type { Job } from '@/types';
-import { formatRate } from '@/utils/money';
+import { ClientFormDialog } from "@/components/ClientFormDialog"
+import { JobFormDialog } from "@/components/JobFormDialog"
+import { archiveClient, unarchiveClient, updateClient } from "@/domain/clients"
+import { archiveJob, createJob, unarchiveJob, updateJob } from "@/domain/jobs"
+import { useClient } from "@/hooks/useClients"
+import { useJobs } from "@/hooks/useJobs"
+import { useSettings } from "@/hooks/useSettings"
+import { bump } from "@/stores/invalidation"
+import type { Job } from "@/types"
+import { formatRate } from "@/utils/money"
 
 export default function ClientDetailScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const id = params.id;
-  const db = useSQLiteContext();
-  const client = useClient(id);
-  const jobs = useJobs({ clientId: id, includeArchived: true });
-  const settings = useSettings();
+  const params = useLocalSearchParams<{ id: string }>()
+  const id = params.id
+  const db = useSQLiteContext()
+  const client = useClient(id)
+  const jobs = useJobs({ clientId: id, includeArchived: true })
+  const settings = useSettings()
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [editClientOpen, setEditClientOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editClientOpen, setEditClientOpen] = useState(false)
   const [jobDialog, setJobDialog] = useState<{ open: boolean; editing?: Job }>({
     open: false,
-  });
+  })
 
   if (client === undefined || jobs === null || settings === null) {
-    return <Stack.Screen options={{ title: '' }} />;
+    return <Stack.Screen options={{ title: "" }} />
   }
   if (client === null) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Not found' }} />
+        <Stack.Screen options={{ title: "Not found" }} />
         <View style={{ padding: 24 }}>
           <Text>Client not found.</Text>
         </View>
       </>
-    );
+    )
   }
 
-  const currency = settings.currency;
-  const activeJobs = jobs.filter((j) => !j.archivedAt);
-  const archivedJobs = jobs.filter((j) => j.archivedAt);
+  const currency = settings.currency
+  const activeJobs = jobs.filter((j) => !j.archivedAt)
+  const archivedJobs = jobs.filter((j) => j.archivedAt)
 
   const renderJob = (job: Job) => (
     <List.Item
@@ -77,11 +68,11 @@ export default function ClientDetailScreen() {
           job.drivingRateCents ?? settings.defaultDrivingRateCents,
           currency,
         )}`,
-      ].join('  ·  ')}
+      ].join("  ·  ")}
       onPress={() => setJobDialog({ open: true, editing: job })}
       right={(props) => <List.Icon {...props} icon="chevron-right" />}
     />
-  );
+  )
 
   return (
     <>
@@ -103,8 +94,8 @@ export default function ClientDetailScreen() {
                 leadingIcon="pencil-outline"
                 title="Edit"
                 onPress={() => {
-                  setMenuOpen(false);
-                  setEditClientOpen(true);
+                  setMenuOpen(false)
+                  setEditClientOpen(true)
                 }}
               />
               {client.archivedAt ? (
@@ -112,9 +103,9 @@ export default function ClientDetailScreen() {
                   leadingIcon="archive-arrow-up-outline"
                   title="Unarchive"
                   onPress={async () => {
-                    setMenuOpen(false);
-                    await unarchiveClient(db, client.id);
-                    bump('clients');
+                    setMenuOpen(false)
+                    await unarchiveClient(db, client.id)
+                    bump("clients")
                   }}
                 />
               ) : (
@@ -122,9 +113,9 @@ export default function ClientDetailScreen() {
                   leadingIcon="archive-arrow-down-outline"
                   title="Archive"
                   onPress={async () => {
-                    setMenuOpen(false);
-                    await archiveClient(db, client.id);
-                    bump('clients');
+                    setMenuOpen(false)
+                    await archiveClient(db, client.id)
+                    bump("clients")
                   }}
                 />
               )}
@@ -167,7 +158,7 @@ export default function ClientDetailScreen() {
       <FAB
         icon="plus"
         label="Add job"
-        style={{ position: 'absolute', right: 16, bottom: 16 }}
+        style={{ position: "absolute", right: 16, bottom: 16 }}
         onPress={() => setJobDialog({ open: true })}
       />
 
@@ -177,15 +168,15 @@ export default function ClientDetailScreen() {
         initialValues={{ name: client.name, notes: client.notes }}
         onDismiss={() => setEditClientOpen(false)}
         onSubmit={async (input) => {
-          await updateClient(db, client.id, input);
-          bump('clients');
-          setEditClientOpen(false);
+          await updateClient(db, client.id, input)
+          bump("clients")
+          setEditClientOpen(false)
         }}
       />
 
       <JobFormDialog
         visible={jobDialog.open}
-        title={jobDialog.editing ? 'Edit job' : 'New job'}
+        title={jobDialog.editing ? "Edit job" : "New job"}
         initialValues={
           jobDialog.editing
             ? {
@@ -203,31 +194,31 @@ export default function ClientDetailScreen() {
           jobDialog.editing ? (
             <Button
               onPress={async () => {
-                const editing = jobDialog.editing!;
+                const editing = jobDialog.editing!
                 if (editing.archivedAt) {
-                  await unarchiveJob(db, editing.id);
+                  await unarchiveJob(db, editing.id)
                 } else {
-                  await archiveJob(db, editing.id);
+                  await archiveJob(db, editing.id)
                 }
-                bump('jobs');
-                setJobDialog({ open: false });
+                bump("jobs")
+                setJobDialog({ open: false })
               }}
             >
-              {jobDialog.editing.archivedAt ? 'Unarchive' : 'Archive'}
+              {jobDialog.editing.archivedAt ? "Unarchive" : "Archive"}
             </Button>
           ) : null
         }
         onDismiss={() => setJobDialog({ open: false })}
         onSubmit={async (input) => {
           if (jobDialog.editing) {
-            await updateJob(db, jobDialog.editing.id, input);
+            await updateJob(db, jobDialog.editing.id, input)
           } else {
-            await createJob(db, { clientId: client.id, ...input });
+            await createJob(db, { clientId: client.id, ...input })
           }
-          bump('jobs');
-          setJobDialog({ open: false });
+          bump("jobs")
+          setJobDialog({ open: false })
         }}
       />
     </>
-  );
+  )
 }

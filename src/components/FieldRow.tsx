@@ -1,18 +1,24 @@
-import { StyleSheet, View } from 'react-native';
-import { Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from "react-native"
+import { Text, TouchableRipple, useTheme } from "react-native-paper"
 
 interface Props {
-  label: string;
-  value: string;
-  placeholder?: string;
-  onPress: () => void;
-  disabled?: boolean;
+  label: string
+  value: string
+  placeholder?: string
+  onPress: () => void
+  disabled?: boolean
 }
 
-export function FieldRow({ label, value, placeholder, onPress, disabled }: Props) {
-  const theme = useTheme();
-  const shown = value || placeholder || '—';
-  const isPlaceholder = !value;
+export function FieldRow({
+  label,
+  value,
+  placeholder,
+  onPress,
+  disabled,
+}: Props) {
+  const theme = useTheme()
+  const shown = value || placeholder || "—"
+  const isPlaceholder = !value
   return (
     <TouchableRipple onPress={onPress} disabled={disabled}>
       <View
@@ -21,20 +27,25 @@ export function FieldRow({ label, value, placeholder, onPress, disabled }: Props
           { borderColor: theme.colors.outline, opacity: disabled ? 0.5 : 1 },
         ]}
       >
-        <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        <Text
+          variant="labelMedium"
+          style={{ color: theme.colors.onSurfaceVariant }}
+        >
           {label}
         </Text>
         <Text
           variant="bodyLarge"
           style={{
-            color: isPlaceholder ? theme.colors.onSurfaceVariant : theme.colors.onSurface,
+            color: isPlaceholder
+              ? theme.colors.onSurfaceVariant
+              : theme.colors.onSurface,
           }}
         >
           {shown}
         </Text>
       </View>
     </TouchableRipple>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -45,4 +56,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 2,
   },
-});
+})

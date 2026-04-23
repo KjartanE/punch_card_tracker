@@ -1,10 +1,15 @@
-import { create } from 'zustand';
+import { create } from "zustand"
 
-export type InvalidationKey = 'clients' | 'jobs' | 'timeEntries' | 'expenses' | 'settings';
+export type InvalidationKey =
+  | "clients"
+  | "jobs"
+  | "timeEntries"
+  | "expenses"
+  | "settings"
 
 interface InvalidationState {
-  versions: Record<InvalidationKey, number>;
-  bump: (key: InvalidationKey) => void;
+  versions: Record<InvalidationKey, number>
+  bump: (key: InvalidationKey) => void
 }
 
 export const useInvalidation = create<InvalidationState>((set) => ({
@@ -13,6 +18,7 @@ export const useInvalidation = create<InvalidationState>((set) => ({
     set((s) => ({
       versions: { ...s.versions, [key]: s.versions[key] + 1 },
     })),
-}));
+}))
 
-export const bump = (key: InvalidationKey): void => useInvalidation.getState().bump(key);
+export const bump = (key: InvalidationKey): void =>
+  useInvalidation.getState().bump(key)

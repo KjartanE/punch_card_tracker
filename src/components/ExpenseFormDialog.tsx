@@ -1,43 +1,37 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import {
-  Button,
-  Chip,
-  Dialog,
-  Portal,
-  TextInput,
-} from 'react-native-paper';
+import { useEffect, useState } from "react"
+import { ScrollView, View } from "react-native"
+import { Button, Chip, Dialog, Portal, TextInput } from "react-native-paper"
 
-import { FieldRow } from '@/components/FieldRow';
-import { PickerDialog } from '@/components/PickerDialog';
+import { FieldRow } from "@/components/FieldRow"
+import { PickerDialog } from "@/components/PickerDialog"
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_ICONS,
   EXPENSE_CATEGORY_LABELS,
-} from '@/domain/expenses';
-import { useJobs } from '@/hooks/useJobs';
-import type { Client, ExpenseCategory } from '@/types';
-import { formatDate, pickDate } from '@/utils/datetime';
-import { formatCentsPlain, parseCents } from '@/utils/money';
+} from "@/domain/expenses"
+import { useJobs } from "@/hooks/useJobs"
+import type { Client, ExpenseCategory } from "@/types"
+import { formatDate, pickDate } from "@/utils/datetime"
+import { formatCentsPlain, parseCents } from "@/utils/money"
 
 export interface ExpenseFormValues {
-  clientId: string | null;
-  jobId: string | null;
-  category: ExpenseCategory;
-  amountCents: number;
-  occurredAt: number;
-  description: string | null;
+  clientId: string | null
+  jobId: string | null
+  category: ExpenseCategory
+  amountCents: number
+  occurredAt: number
+  description: string | null
 }
 
 interface Props {
-  visible: boolean;
-  title?: string;
-  initialValues?: Partial<ExpenseFormValues>;
-  clients: Client[];
-  currency: string;
-  onDismiss: () => void;
-  onSubmit: (values: ExpenseFormValues) => Promise<void> | void;
-  onDelete?: () => Promise<void> | void;
+  visible: boolean
+  title?: string
+  initialValues?: Partial<ExpenseFormValues>
+  clients: Client[]
+  currency: string
+  onDismiss: () => void
+  onSubmit: (values: ExpenseFormValues) => Promise<void> | void
+  onDelete?: () => Promise<void> | void
 }
 
 export function ExpenseFormDialog({
@@ -50,27 +44,27 @@ export function ExpenseFormDialog({
   onSubmit,
   onDelete,
 }: Props) {
-  const [category, setCategory] = useState<ExpenseCategory>('other');
-  const [amount, setAmount] = useState('');
-  const [occurredAt, setOccurredAt] = useState<number>(Date.now());
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [clientPicker, setClientPicker] = useState(false);
-  const [jobPicker, setJobPicker] = useState(false);
+  const [category, setCategory] = useState<ExpenseCategory>("other")
+  const [amount, setAmount] = useState("")
+  const [occurredAt, setOccurredAt] = useState<number>(Date.now())
+  const [clientId, setClientId] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
+  const [description, setDescription] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [clientPicker, setClientPicker] = useState(false)
+  const [jobPicker, setJobPicker] = useState(false)
 
-  const jobs = useJobs({ clientId: clientId ?? undefined });
+  const jobs = useJobs({ clientId: clientId ?? undefined })
 
   useEffect(() => {
     if (visible) {
-      setCategory(initialValues?.category ?? 'other');
-      setAmount(formatCentsPlain(initialValues?.amountCents ?? null));
-      setOccurredAt(initialValues?.occurredAt ?? Date.now());
-      setClientId(initialValues?.clientId ?? null);
-      setJobId(initialValues?.jobId ?? null);
-      setDescription(initialValues?.description ?? '');
-      setBusy(false);
+      setCategory(initialValues?.category ?? "other")
+      setAmount(formatCentsPlain(initialValues?.amountCents ?? null))
+      setOccurredAt(initialValues?.occurredAt ?? Date.now())
+      setClientId(initialValues?.clientId ?? null)
+      setJobId(initialValues?.jobId ?? null)
+      setDescription(initialValues?.description ?? "")
+      setBusy(false)
     }
   }, [
     visible,
@@ -80,22 +74,22 @@ export function ExpenseFormDialog({
     initialValues?.clientId,
     initialValues?.jobId,
     initialValues?.description,
-  ]);
+  ])
 
-  const cents = parseCents(amount);
-  const canSubmit = !busy && cents !== null && cents > 0;
+  const cents = parseCents(amount)
+  const canSubmit = !busy && cents !== null && cents > 0
 
-  const selectedClient = clients.find((c) => c.id === clientId);
-  const selectedJob = (jobs ?? []).find((j) => j.id === jobId);
+  const selectedClient = clients.find((c) => c.id === clientId)
+  const selectedJob = (jobs ?? []).find((j) => j.id === jobId)
 
   const handlePickDate = async () => {
-    const picked = await pickDate(occurredAt);
-    if (picked !== null) setOccurredAt(picked);
-  };
+    const picked = await pickDate(occurredAt)
+    if (picked !== null) setOccurredAt(picked)
+  }
 
   const handleSubmit = async () => {
-    if (!canSubmit || cents === null) return;
-    setBusy(true);
+    if (!canSubmit || cents === null) return
+    setBusy(true)
     try {
       await onSubmit({
         category,
@@ -104,33 +98,41 @@ export function ExpenseFormDialog({
         clientId,
         jobId,
         description: description.trim() || null,
-      });
+      })
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!onDelete || busy) return;
-    setBusy(true);
+    if (!onDelete || busy) return
+    setBusy(true)
     try {
-      await onDelete();
+      await onDelete()
     } finally {
-      setBusy(false);
+      setBusy(false)
     }
-  };
+  }
 
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss}>
-        <Dialog.Title>{title ?? (onDelete ? 'Edit expense' : 'New expense')}</Dialog.Title>
+        <Dialog.Title>
+          {title ?? (onDelete ? "Edit expense" : "New expense")}
+        </Dialog.Title>
         <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
           <ScrollView
-            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 8, gap: 12 }}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingBottom: 8,
+              gap: 12,
+            }}
             keyboardShouldPersistTaps="handled"
           >
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 2 }}>
+              <View
+                style={{ flexDirection: "row", gap: 8, paddingVertical: 2 }}
+              >
                 {EXPENSE_CATEGORIES.map((cat) => (
                   <Chip
                     key={cat}
@@ -158,14 +160,14 @@ export function ExpenseFormDialog({
             </Button>
             <FieldRow
               label="Client (optional)"
-              value={selectedClient?.name ?? ''}
+              value={selectedClient?.name ?? ""}
               placeholder="None"
               onPress={() => setClientPicker(true)}
             />
             <FieldRow
               label="Job (optional)"
-              value={selectedJob?.name ?? ''}
-              placeholder={clientId ? 'None' : 'Pick a client first'}
+              value={selectedJob?.name ?? ""}
+              placeholder={clientId ? "None" : "Pick a client first"}
               onPress={() => setJobPicker(true)}
               disabled={!clientId}
             />
@@ -198,15 +200,15 @@ export function ExpenseFormDialog({
         visible={clientPicker}
         title="Select client"
         options={[
-          { id: '__none__', title: 'None (unassigned)' },
+          { id: "__none__", title: "None (unassigned)" },
           ...clients.map((c) => ({ id: c.id, title: c.name })),
         ]}
-        selectedId={clientId ?? '__none__'}
+        selectedId={clientId ?? "__none__"}
         onSelect={(id) => {
-          const next = id === '__none__' ? null : id;
-          setClientId(next);
-          if (next !== clientId) setJobId(null);
-          setClientPicker(false);
+          const next = id === "__none__" ? null : id
+          setClientId(next)
+          if (next !== clientId) setJobId(null)
+          setClientPicker(false)
         }}
         onDismiss={() => setClientPicker(false)}
       />
@@ -214,17 +216,17 @@ export function ExpenseFormDialog({
         visible={jobPicker}
         title="Select job"
         options={[
-          { id: '__none__', title: 'None' },
+          { id: "__none__", title: "None" },
           ...(jobs ?? []).map((j) => ({ id: j.id, title: j.name })),
         ]}
-        selectedId={jobId ?? '__none__'}
+        selectedId={jobId ?? "__none__"}
         emptyHint="This client has no active jobs."
         onSelect={(id) => {
-          setJobId(id === '__none__' ? null : id);
-          setJobPicker(false);
+          setJobId(id === "__none__" ? null : id)
+          setJobPicker(false)
         }}
         onDismiss={() => setJobPicker(false)}
       />
     </Portal>
-  );
+  )
 }

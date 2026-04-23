@@ -55,4 +55,4 @@ export const migrations: readonly string[] = [
   );
   INSERT INTO settings (id, currency) VALUES (1, 'USD');
   `,
-] as const;
+] as const

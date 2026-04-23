@@ -1,57 +1,57 @@
-import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Divider, List, Menu, TextInput } from 'react-native-paper';
+import { useSQLiteContext } from "expo-sqlite"
+import { useEffect, useState } from "react"
+import { ScrollView, StyleSheet, View } from "react-native"
+import { Divider, List, Menu, TextInput } from "react-native-paper"
 
-import { ExportDialog } from '@/components/ExportDialog';
-import { updateSettings } from '@/domain/settings';
-import { useSettings } from '@/hooks/useSettings';
-import { bump } from '@/stores/invalidation';
-import { SUPPORTED_CURRENCIES } from '@/utils/currencies';
-import { formatCentsPlain, parseCents } from '@/utils/money';
+import { ExportDialog } from "@/components/ExportDialog"
+import { updateSettings } from "@/domain/settings"
+import { useSettings } from "@/hooks/useSettings"
+import { bump } from "@/stores/invalidation"
+import { SUPPORTED_CURRENCIES } from "@/utils/currencies"
+import { formatCentsPlain, parseCents } from "@/utils/money"
 
 export default function SettingsScreen() {
-  const db = useSQLiteContext();
-  const settings = useSettings();
+  const db = useSQLiteContext()
+  const settings = useSettings()
 
-  const [onsite, setOnsite] = useState('');
-  const [driving, setDriving] = useState('');
-  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
+  const [onsite, setOnsite] = useState("")
+  const [driving, setDriving] = useState("")
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     if (settings) {
-      setOnsite(formatCentsPlain(settings.defaultOnsiteRateCents));
-      setDriving(formatCentsPlain(settings.defaultDrivingRateCents));
+      setOnsite(formatCentsPlain(settings.defaultOnsiteRateCents))
+      setDriving(formatCentsPlain(settings.defaultDrivingRateCents))
     }
-  }, [settings]);
+  }, [settings])
 
-  if (!settings) return null;
+  if (!settings) return null
 
   const saveRate = async (
-    field: 'defaultOnsiteRateCents' | 'defaultDrivingRateCents',
+    field: "defaultOnsiteRateCents" | "defaultDrivingRateCents",
     value: string,
     currentCents: number | null,
   ) => {
-    const trimmed = value.trim();
-    const cents = trimmed === '' ? null : parseCents(trimmed);
-    if (trimmed !== '' && cents === null) {
-      const revert = formatCentsPlain(currentCents);
-      if (field === 'defaultOnsiteRateCents') setOnsite(revert);
-      else setDriving(revert);
-      return;
+    const trimmed = value.trim()
+    const cents = trimmed === "" ? null : parseCents(trimmed)
+    if (trimmed !== "" && cents === null) {
+      const revert = formatCentsPlain(currentCents)
+      if (field === "defaultOnsiteRateCents") setOnsite(revert)
+      else setDriving(revert)
+      return
     }
-    if (cents === currentCents) return;
-    await updateSettings(db, { [field]: cents });
-    bump('settings');
-  };
+    if (cents === currentCents) return
+    await updateSettings(db, { [field]: cents })
+    bump("settings")
+  }
 
   const saveCurrency = async (code: string) => {
-    setCurrencyMenuOpen(false);
-    if (code === settings.currency) return;
-    await updateSettings(db, { currency: code });
-    bump('settings');
-  };
+    setCurrencyMenuOpen(false)
+    if (code === settings.currency) return
+    await updateSettings(db, { currency: code })
+    bump("settings")
+  }
 
   return (
     <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
@@ -63,7 +63,13 @@ export default function SettingsScreen() {
             keyboardType="decimal-pad"
             value={onsite}
             onChangeText={setOnsite}
-            onBlur={() => saveRate('defaultOnsiteRateCents', onsite, settings.defaultOnsiteRateCents)}
+            onBlur={() =>
+              saveRate(
+                "defaultOnsiteRateCents",
+                onsite,
+                settings.defaultOnsiteRateCents,
+              )
+            }
             placeholder="0.00"
             right={<TextInput.Affix text={`${settings.currency}/hr`} />}
           />
@@ -75,7 +81,13 @@ export default function SettingsScreen() {
             keyboardType="decimal-pad"
             value={driving}
             onChangeText={setDriving}
-            onBlur={() => saveRate('defaultDrivingRateCents', driving, settings.defaultDrivingRateCents)}
+            onBlur={() =>
+              saveRate(
+                "defaultDrivingRateCents",
+                driving,
+                settings.defaultDrivingRateCents,
+              )
+            }
             placeholder="0.00"
             right={<TextInput.Affix text={`${settings.currency}/hr`} />}
           />
@@ -119,11 +131,14 @@ export default function SettingsScreen() {
           left={(props) => <List.Icon {...props} icon="file-export-outline" />}
         />
       </List.Section>
-      <ExportDialog visible={exportOpen} onDismiss={() => setExportOpen(false)} />
+      <ExportDialog
+        visible={exportOpen}
+        onDismiss={() => setExportOpen(false)}
+      />
     </ScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   field: { paddingHorizontal: 16, paddingVertical: 8 },
-});
+})
