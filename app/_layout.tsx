@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { SQLiteProvider } from "expo-sqlite"
@@ -14,9 +15,16 @@ import { hydrateActivities } from "@/stores/activities"
 import { buildTheme, DEFAULT_ACCENT_ID } from "@/theme"
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Inter: require("../assets/fonts/Inter.ttf"),
+    "Inter-Italic": require("../assets/fonts/Inter-Italic.ttf"),
+  })
+
   useEffect(() => {
     void hydrateActivities()
   }, [])
+
+  if (!fontsLoaded) return null
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

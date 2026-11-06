@@ -1,20 +1,12 @@
 import { useSQLiteContext } from "expo-sqlite"
 import { useEffect, useState } from "react"
-import { Pressable, ScrollView, StyleSheet, View } from "react-native"
-import {
-  Divider,
-  List,
-  Menu,
-  Text,
-  TextInput,
-  useTheme,
-} from "react-native-paper"
+import { ScrollView, StyleSheet, View } from "react-native"
+import { Divider, List, Menu, TextInput } from "react-native-paper"
 
 import { ExportDialog } from "@/components/ExportDialog"
 import { updateSettings } from "@/domain/settings"
 import { useSettings } from "@/hooks/useSettings"
 import { bump } from "@/stores/invalidation"
-import { ACCENT_PALETTES } from "@/theme"
 import type { ThemeMode } from "@/types"
 import { SUPPORTED_CURRENCIES } from "@/utils/currencies"
 import { formatCentsPlain, parseCents } from "@/utils/money"
@@ -27,7 +19,6 @@ const THEME_OPTIONS: { value: ThemeMode; label: string; icon: string }[] = [
 
 export default function SettingsScreen() {
   const db = useSQLiteContext()
-  const theme = useTheme()
   const settings = useSettings()
 
   const [onsite, setOnsite] = useState("")
@@ -74,12 +65,6 @@ export default function SettingsScreen() {
     setThemeMenuOpen(false)
     if (mode === settings.themeMode) return
     await updateSettings(db, { themeMode: mode })
-    bump("settings")
-  }
-
-  const saveAccent = async (id: string) => {
-    if (id === settings.accentColor) return
-    await updateSettings(db, { accentColor: id })
     bump("settings")
   }
 
@@ -158,53 +143,6 @@ export default function SettingsScreen() {
             />
           ))}
         </Menu>
-        <View style={styles.accentRow}>
-          <Text
-            variant="labelMedium"
-            style={{
-              color: theme.colors.onSurfaceVariant,
-              marginBottom: 8,
-            }}
-          >
-            ACCENT COLOR
-          </Text>
-          <View style={styles.swatchRow}>
-            {ACCENT_PALETTES.map((p) => {
-              const selected = p.id === settings.accentColor
-              return (
-                <Pressable
-                  key={p.id}
-                  onPress={() => void saveAccent(p.id)}
-                  style={({ pressed }) => [
-                    styles.swatchWrap,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.swatch,
-                      {
-                        backgroundColor: p.swatch,
-                        borderColor: selected
-                          ? theme.colors.onSurface
-                          : "transparent",
-                      },
-                    ]}
-                  />
-                  <Text
-                    variant="labelSmall"
-                    style={{
-                      marginTop: 4,
-                      fontWeight: selected ? "700" : "400",
-                    }}
-                  >
-                    {p.label}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
-        </View>
       </List.Section>
 
       <Divider />
@@ -254,20 +192,4 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   field: { paddingHorizontal: 16, paddingVertical: 8 },
-  accentRow: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
-  swatchRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  swatchWrap: {
-    alignItems: "center",
-    width: 64,
-  },
-  swatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-  },
 })

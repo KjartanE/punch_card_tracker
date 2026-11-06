@@ -145,7 +145,10 @@ export default function HistoryScreen() {
             <Text variant="labelLarge" style={{ flex: 1 }}>
               {section.title}
             </Text>
-            <Text variant="labelMedium" style={{ opacity: 0.75 }}>
+            <Text
+              variant="labelMedium"
+              style={{ opacity: 0.75, fontVariant: ["tabular-nums"] }}
+            >
               {formatHours(section.totalMs)}
               {section.totalCents != null
                 ? `  ·  ${formatCents(section.totalCents, currency)}`
@@ -288,10 +291,16 @@ function EntryRow({ entry, defaults, currency, onPress }: EntryRowProps) {
           ) : null}
         </View>
         <View style={{ alignItems: "flex-end", gap: 4 }}>
-          <Text variant="titleSmall">
+          <Text
+            variant="titleSmall"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
             {formatDuration(earnings.durationMs)}
           </Text>
-          <Text variant="bodySmall" style={{ opacity: 0.75 }}>
+          <Text
+            variant="bodySmall"
+            style={{ opacity: 0.75, fontVariant: ["tabular-nums"] }}
+          >
             {earnings.earningsCents != null
               ? formatCents(earnings.earningsCents, currency)
               : "No rate"}

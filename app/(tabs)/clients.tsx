@@ -26,6 +26,7 @@ import { archiveJob, createJob, unarchiveJob, updateJob } from "@/domain/jobs"
 import { useClients } from "@/hooks/useClients"
 import { useJobs } from "@/hooks/useJobs"
 import { bump } from "@/stores/invalidation"
+import { eyebrow } from "@/theme/typography"
 import type { Client, Job } from "@/types"
 
 export default function ClientsScreen() {
@@ -263,13 +264,15 @@ function ClientRow({ client, expanded, onToggle }: ClientRowProps) {
 
           <View style={{ marginTop: 12 }}>
             <Text
-              variant="labelMedium"
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                marginBottom: 4,
-              }}
+              style={[
+                eyebrow,
+                {
+                  color: theme.colors.onSurfaceVariant,
+                  marginBottom: 4,
+                },
+              ]}
             >
-              JOBS
+              Jobs
             </Text>
             {jobs === null ? null : jobs.length === 0 ? (
               <Text style={{ opacity: 0.6, paddingVertical: 8 }}>

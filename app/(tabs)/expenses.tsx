@@ -26,6 +26,7 @@ import { useClients } from "@/hooks/useClients"
 import { useExpenses } from "@/hooks/useExpenses"
 import { useSettings } from "@/hooks/useSettings"
 import { bump } from "@/stores/invalidation"
+import { eyebrow, tabularNum } from "@/theme/typography"
 import type { ExpenseCategory } from "@/types"
 import {
   formatDate,
@@ -236,10 +237,18 @@ export default function ExpensesScreen() {
         ListHeaderComponent={
           thisMonthSummary ? (
             <Surface style={styles.summary} elevation={1} mode="flat">
-              <Text variant="labelMedium" style={{ opacity: 0.7 }}>
-                THIS MONTH
+              <Text
+                style={[
+                  eyebrow,
+                  { color: theme.colors.onSurfaceVariant, opacity: 0.85 },
+                ]}
+              >
+                This month
               </Text>
-              <Text variant="headlineMedium" style={{ marginTop: 2 }}>
+              <Text
+                variant="headlineMedium"
+                style={[tabularNum, { marginTop: 2 }]}
+              >
                 {formatCents(thisMonthSummary.total, currency)}
               </Text>
               <View style={styles.summaryChips}>
@@ -281,7 +290,10 @@ export default function ExpensesScreen() {
                 </Text>
                 <Text
                   variant="labelMedium"
-                  style={{ color: theme.colors.onPrimaryContainer }}
+                  style={{
+                    color: theme.colors.onPrimaryContainer,
+                    fontVariant: ["tabular-nums"],
+                  }}
                 >
                   {formatCents(section.monthTotalCents, currency)}
                 </Text>
@@ -296,7 +308,10 @@ export default function ExpensesScreen() {
               <Text variant="labelLarge" style={{ flex: 1 }}>
                 {section.title}
               </Text>
-              <Text variant="labelMedium" style={{ opacity: 0.75 }}>
+              <Text
+                variant="labelMedium"
+                style={{ opacity: 0.75, fontVariant: ["tabular-nums"] }}
+              >
                 {formatCents(section.totalCents, currency)}
               </Text>
             </View>
@@ -409,7 +424,10 @@ function ExpenseRow({ expense, currency, selected, onPress }: ExpenseRowProps) {
           </View>
         </View>
         <View style={{ alignItems: "flex-end", justifyContent: "center" }}>
-          <Text variant="titleMedium">
+          <Text
+            variant="titleMedium"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
             {formatCents(expense.amountCents, currency)}
           </Text>
         </View>

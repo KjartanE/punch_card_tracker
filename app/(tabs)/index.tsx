@@ -21,6 +21,7 @@ import {
   useActivitiesStore,
   type ActivityChip,
 } from "@/stores/activities"
+import { eyebrow, tabularNum } from "@/theme/typography"
 import type { TimeEntryType } from "@/types"
 import { formatDuration } from "@/utils/duration"
 import { formatCents } from "@/utils/money"
@@ -78,7 +79,15 @@ export default function NowScreen() {
         onStop={stopTimer}
       />
       <ScrollView contentContainerStyle={styles.chipWrap}>
-        <Text variant="labelLarge" style={{ marginBottom: 8, opacity: 0.7 }}>
+        <Text
+          style={[
+            eyebrow,
+            {
+              marginBottom: 10,
+              color: theme.colors.onSurfaceVariant,
+            },
+          ]}
+        >
           Activities · tap to start / lap
         </Text>
         <View style={styles.chipGrid}>
@@ -93,7 +102,13 @@ export default function NowScreen() {
                 showSelectedCheck={false}
                 onPress={() => void startLap(chip)}
                 onLongPress={() => setConfirmRemove(chip)}
-                style={styles.chip}
+                style={[
+                  styles.chip,
+                  isActive && { backgroundColor: theme.colors.primary },
+                ]}
+                textStyle={
+                  isActive ? { color: theme.colors.onPrimary } : undefined
+                }
               >
                 {chip.label}
               </Chip>
@@ -189,16 +204,16 @@ function ActiveTimerBanner({ openEntry, settings, onStop }: BannerProps) {
           { backgroundColor: theme.colors.surfaceVariant },
         ]}
       >
-        <Text variant="labelLarge" style={{ opacity: 0.7 }}>
-          NOT RUNNING
+        <Text style={[eyebrow, { color: theme.colors.onSurfaceVariant }]}>
+          Not running
         </Text>
         <Text
           variant="displaySmall"
-          style={{ fontVariant: ["tabular-nums"], opacity: 0.4 }}
+          style={[tabularNum, { opacity: 0.4, marginTop: 4 }]}
         >
           00:00:00
         </Text>
-        <Text variant="bodyMedium" style={{ opacity: 0.6, marginTop: 4 }}>
+        <Text variant="bodyMedium" style={{ opacity: 0.6, marginTop: 6 }}>
           Tap any activity below to start.
         </Text>
       </View>
@@ -237,11 +252,8 @@ function ActiveTimerBanner({ openEntry, settings, onStop }: BannerProps) {
       ]}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text
-          variant="labelLarge"
-          style={{ color: theme.colors.onPrimaryContainer }}
-        >
-          RUNNING
+        <Text style={[eyebrow, { color: theme.colors.onPrimaryContainer }]}>
+          Running
         </Text>
         <View style={{ flex: 1 }} />
         <IconButton
@@ -255,10 +267,7 @@ function ActiveTimerBanner({ openEntry, settings, onStop }: BannerProps) {
       </View>
       <Text
         variant="displaySmall"
-        style={{
-          fontVariant: ["tabular-nums"],
-          color: theme.colors.onPrimaryContainer,
-        }}
+        style={[tabularNum, { color: theme.colors.onPrimaryContainer }]}
       >
         {formatDuration(elapsed, true)}
       </Text>
